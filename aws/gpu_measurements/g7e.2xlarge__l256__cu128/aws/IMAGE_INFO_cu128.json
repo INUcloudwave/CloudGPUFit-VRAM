@@ -1,0 +1,24 @@
+{
+ "tag": "cloudgpufit-bench:cu128-v1",
+ "inugpu_docker_image_id": "sha256:798b909f2bce89cead626c7cc4c77e4bc7db7edc483ec15a91e9884e03902641",
+ "note_image_id": "containerd image store on INUGPU reports the OCI index digest as ID; classic overlay2 hosts report config_digest. Layer diff_ids must match exactly.",
+ "oci_index_digest": "sha256:798b909f2bce89cead626c7cc4c77e4bc7db7edc483ec15a91e9884e03902641",
+ "config_digest": "sha256:f7efefc8cd86defe20a627a0933fa37487c6052cb4953035fa9454278c10fb0d",
+ "rootfs_diff_ids": [
+  "sha256:f862e1968e4b4c3c3af141e37d2ec22b19ec0fd50d6a8aaf683de6729e296226",
+  "sha256:105c4058ec6f14215f0da98eaeae0dac3960e697ee19b38f2d8a365e679ec974",
+  "sha256:2bf9ca7c9c371a3db2515b77c08c0f85c5c03821a2c383861680ee6dad1b427e",
+  "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+  "sha256:1fda46049be10a2677981d12a76701bd60a254a61414f0e7e97fa1e0cf45064f",
+  "sha256:ddfe39b13a85ab89772f41ede15bad0b3f8bd118efffdeb8a11dc7714edd67f6",
+  "sha256:e067189e0626de8a7cd2734d31b5749e857629fabf32ba83995e2154003f62b1"
+ ],
+ "docker_save_stream_sha256": "1638cc5d8f129be65e67d543c4321849e85102b68f2fa76978fe9434ca0192e3",
+ "docker_save_stream_bytes": 4265817600,
+ "docker_save_deterministic": "two consecutive docker save on INUGPU gave the same sha256 (2026-11-17)",
+ "contents": "python 3.11.13, torch 2.7.1+cu128 (archs sm_75..sm_120), cuDNN 90701, numpy 2.2.6, transformers 4.52.4, accelerate 1.4.0, huggingface_hub 0.36.2, tokenizers 0.21.4, safetensors 0.8.0 (base pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime @sha256:c16f4c74...)",
+ "why": "cu124-v1 (torch 2.6.0+cu124, sm_50..sm_90) has no kernels for Blackwell sm_120 (AWS g7.2xlarge RTX PRO 4500: all 26 pilot conditions compat_or_runtime_error, 2026-11-17)",
+ "differs_from_cu124_v1": "torch 2.6.0->2.7.1, CUDA 12.4->12.8, cuDNN 9.1.0->9.7.1, cuBLAS 12.4->12.8, python 3.11.11->3.11.13, numpy 2.2.2->2.2.6; pip-added packages pinned identical",
+ "dockerfile": "cloudgpufit-bench/cu128/Dockerfile",
+ "architecture": "amd64"
+}

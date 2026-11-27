@@ -1,0 +1,129 @@
+{
+ "note": "allocator capacity used to replay CPU request traces = cuda_total_memory - non_allocator_bytes (both measured on the GPU, once per GPU type/driver). compute_capability and architecture are public NVIDIA specs; the cuBLAS workspace size is computed from them and runtime_torch (cgf680.gpu_rules). Fields set to null are not measured yet; verified=true only when the measured fields come from a GPU run.",
+ "profiles": {
+  "rtx3090": {
+   "gpu_name": "NVIDIA GeForce RTX 3090",
+   "cuda_total_memory": 25306529792,
+   "non_allocator_bytes": 327155712,
+   "capacity_bytes": 24979374080,
+   "verified": true,
+   "source": "INUGPU main395 L1024 measure.json: environment.cuda_total_memory; non_allocator = NVML process peak - torch reserved peak (min 312 / median 312 / max 316 MiB over measure_0 of 381 ok conditions, driver 570.211.01)",
+   "architecture": "Ampere",
+   "compute_capability": [
+    8,
+    6
+   ],
+   "vram_nominal_gb": 24,
+   "runtime_torch": "2.6.0",
+   "aws_instance": null
+  },
+  "t4": {
+   "gpu_name": "Tesla T4",
+   "architecture": "Turing",
+   "compute_capability": [
+    7,
+    5
+   ],
+   "vram_nominal_gb": 16,
+   "aws_instance": "g4dn",
+   "runtime_torch": "2.6.0",
+   "cuda_total_memory": 15637086208,
+   "non_allocator_bytes": 136314880,
+   "capacity_bytes": 15500771328,
+   "driver": "595.112.07",
+   "verified": true,
+   "source": "AWS g4dn.xlarge-l256 measure.json (395 conditions): environment.cuda_total_memory; non_allocator = NVML process peak - torch reserved peak (min 130 / median 130 / max 132 MiB over measure_0 of ok conditions), driver 595.112.07, torch 2.6.0+cu124, image sha256:457da255e6e2",
+   "cudnn": 90100
+  },
+  "a10g": {
+   "gpu_name": "NVIDIA A10G",
+   "architecture": "Ampere",
+   "compute_capability": [
+    8,
+    6
+   ],
+   "vram_nominal_gb": 24,
+   "aws_instance": "g5",
+   "runtime_torch": "2.6.0",
+   "cuda_total_memory": 23686938624,
+   "non_allocator_bytes": 322961408,
+   "capacity_bytes": 23363977216,
+   "driver": "595.112.07",
+   "verified": true,
+   "source": "AWS g5.xlarge-l256 measure.json (395 conditions): environment.cuda_total_memory; non_allocator = NVML process peak - torch reserved peak (min 308 / median 308 / max 312 MiB over measure_0 of ok conditions), driver 595.112.07, torch 2.6.0+cu124, image sha256:457da255e6e2",
+   "cudnn": 90100
+  },
+  "l4": {
+   "gpu_name": "NVIDIA L4",
+   "architecture": "Ada",
+   "compute_capability": [
+    8,
+    9
+   ],
+   "vram_nominal_gb": 24,
+   "aws_instance": "g6 / gr6",
+   "runtime_torch": "2.6.0",
+   "cuda_total_memory": 23661248512,
+   "non_allocator_bytes": 243269632,
+   "capacity_bytes": 23417978880,
+   "driver": "595.112.07",
+   "verified": true,
+   "source": "AWS g6.xlarge-l256 measure.json (395 conditions): environment.cuda_total_memory; non_allocator = NVML process peak - torch reserved peak (min 232 / median 232 / max 236 MiB over measure_0 of ok conditions), driver 595.112.07, torch 2.6.0+cu124, image sha256:457da255e6e2; gr6.4xlarge repeat (same GPU, 382 ok / 13 gpu_oom): outside median 232 MiB (232-236), cuda_total equal, reserved byte-equal to g6 on 376/382 conditions",
+   "cudnn": 90100
+  },
+  "l40s": {
+   "gpu_name": "NVIDIA L40S",
+   "architecture": "Ada",
+   "compute_capability": [
+    8,
+    9
+   ],
+   "vram_nominal_gb": 48,
+   "aws_instance": "g6e",
+   "runtime_torch": "2.6.0",
+   "cuda_total_memory": 47667740672,
+   "non_allocator_bytes": 534773760,
+   "capacity_bytes": 47132966912,
+   "driver": "595.112.07",
+   "verified": true,
+   "source": "AWS g6e.xlarge-l256 measure.json (395 conditions): environment.cuda_total_memory; non_allocator = NVML process peak - torch reserved peak (min 510 / median 510 / max 514 MiB over measure_0 of ok conditions), driver 595.112.07, torch 2.6.0+cu124, image sha256:457da255e6e2",
+   "cudnn": 90100
+  },
+  "rtxpro4500": {
+   "gpu_name": "NVIDIA RTX PRO 4500 Blackwell Server Edition",
+   "architecture": "Blackwell",
+   "compute_capability": [
+    12,
+    0
+   ],
+   "vram_nominal_gb": 32,
+   "aws_instance": "g7",
+   "runtime_torch": "2.7.1",
+   "cuda_total_memory": 33689829376,
+   "non_allocator_bytes": 335544320,
+   "capacity_bytes": 33354285056,
+   "driver": "595.112.07",
+   "verified": true,
+   "source": "AWS g7.2xlarge__l256__cu128 measure.json (395 conditions): environment.cuda_total_memory; non_allocator = NVML process peak - torch reserved peak (min 318 / median 320 / max 326 MiB over measure_0 of ok conditions), driver 595.112.07, torch 2.7.1+cu128, image sha256:798b909f2bce",
+   "cudnn": 90701
+  },
+  "rtxpro6000": {
+   "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Server Edition",
+   "architecture": "Blackwell",
+   "compute_capability": [
+    12,
+    0
+   ],
+   "vram_nominal_gb": 96,
+   "aws_instance": "g7e",
+   "runtime_torch": "2.7.1",
+   "cuda_total_memory": 101975851008,
+   "non_allocator_bytes": 719323136,
+   "capacity_bytes": 101256527872,
+   "driver": "595.112.07",
+   "verified": true,
+   "source": "AWS g7e.2xlarge__l256__cu128 measure.json (395 conditions, 395 ok): environment.cuda_total_memory; non_allocator = NVML process peak - torch reserved peak (min 684 / median 686 / max 692 MiB over measure_0 of ok conditions), driver 595.112.07, torch 2.7.1+cu128, image sha256:798b909f2bce; capacity = cuda_total - median non_allocator (same rule as the other GPUs, results/reserved_v3/aws_gpu_check_20261126)",
+   "cudnn": 90701
+  }
+ }
+}

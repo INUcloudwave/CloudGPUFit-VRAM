@@ -1,0 +1,201 @@
+{
+ "schema": "cgf-fp16-vram-worker/1",
+ "mode": "validate",
+ "condition": {
+  "condition_id": "vit-large-patch16-224__b16__r224",
+  "model": "google/vit-large-patch16-224",
+  "workload_type": "vision_cls",
+  "batch_size": 16,
+  "resolution": 224
+ },
+ "status": "ok",
+ "stage": "complete",
+ "worker_sha256": "d06f0f15982c811c4bc6a24028f71728e461c6ee3651bcfd520ba49b0d675883",
+ "models_json_sha256": "7b11e3e36eafd5ec73cb7686469acb21036fb60141903e34381f3eda7bad6589",
+ "conditions_json_sha256": "d4a9b09caff3064c00c04358bf2e462996bced23de93da98652bd1aba04b7289",
+ "argv": [
+  "/src/vram_worker.py",
+  "--models",
+  "/config/models.json",
+  "--conditions",
+  "/config/conditions_main395_l256.json",
+  "--condition",
+  "vit-large-patch16-224__b16__r224",
+  "--mode",
+  "validate",
+  "--out",
+  "/out/validate.json",
+  "--attn",
+  "default"
+ ],
+ "protocol": {
+  "warmup": 0,
+  "measure": 1,
+  "allocator_cache_kept_between_iterations": true,
+  "peak_reset": "torch.cuda.reset_peak_memory_stats() right before each measure iteration (after start values)",
+  "end_values": "end_* recorded after synchronize with output tensor and GPU inputs still referenced; released_* after del output/inputs + synchronize"
+ },
+ "environment": {
+  "gpu_name": "NVIDIA RTX PRO 4500 Blackwell Server Edition",
+  "gpu_uuid": "2fd6a4f6-231d-04ac-ffdf-bb386acbc310",
+  "cuda_total_memory": 33689829376,
+  "capability": [
+   12,
+   0
+  ],
+  "torch": "2.7.1+cu128",
+  "torch_cuda": "12.8",
+  "cudnn": 90701,
+  "transformers": "4.52.4",
+  "python": "3.11.13",
+  "kernel": "7.0.0-1017-aws",
+  "cuda_module_loading_env": "LAZY",
+  "cuda_module_loading_driver": {
+   "rc": 0,
+   "mode": "LAZY"
+  },
+  "allocator_backend": "native",
+  "env": {
+   "PYTORCH_CUDA_ALLOC_CONF": null,
+   "CUBLAS_WORKSPACE_CONFIG": null,
+   "CUBLASLT_WORKSPACE_SIZE": null,
+   "PYTORCH_NO_CUDA_MEMORY_CACHING": null,
+   "CUDA_VISIBLE_DEVICES": null,
+   "OMP_NUM_THREADS": null
+  },
+  "tf32_matmul": false,
+  "tf32_cudnn": false,
+  "cudnn_benchmark": false,
+  "torch_threads": 8,
+  "cpu_count": 8,
+  "pid": 10900,
+  "image_id": "sha256:798b909f2bce89cead626c7cc4c77e4bc7db7edc483ec15a91e9884e03902641",
+  "gpu_label": "aws-g7.2xlarge__l256__cu128",
+  "instance_type": "g7.2xlarge",
+  "driver": "595.112.07",
+  "nvml_uuid": "GPU-2fd6a4f6-231d-04ac-ffdf-bb386acbc310",
+  "nvml_total": 34207694848,
+  "other_gpu_pids": []
+ },
+ "start_state": {
+  "allocated_bytes.all.current": 0,
+  "allocated_bytes.all.peak": 0,
+  "reserved_bytes.all.current": 0,
+  "reserved_bytes.all.peak": 0,
+  "active_bytes.all.peak": 0,
+  "requested_bytes.all.peak": 0,
+  "segment.all.current": 0,
+  "allocation.all.allocated": 0,
+  "allocation.all.freed": 0,
+  "segment.all.allocated": 0,
+  "segment.all.freed": 0,
+  "num_alloc_retries": 0,
+  "num_ooms": 0,
+  "num_device_alloc": 0,
+  "num_device_free": 0
+ },
+ "after_load": {
+  "allocated_bytes.all.current": 609701888,
+  "allocated_bytes.all.peak": 624414720,
+  "reserved_bytes.all.current": 650117120,
+  "reserved_bytes.all.peak": 650117120,
+  "active_bytes.all.peak": 624414720,
+  "requested_bytes.all.peak": 623366144,
+  "segment.all.current": 4,
+  "allocation.all.allocated": 785,
+  "allocation.all.freed": 393,
+  "segment.all.allocated": 4,
+  "segment.all.freed": 0,
+  "num_alloc_retries": 0,
+  "num_ooms": 0,
+  "num_device_alloc": 4,
+  "num_device_free": 0,
+  "max_allocated": 624414720,
+  "max_reserved": 650117120
+ },
+ "model": {
+  "id": "google/vit-large-patch16-224",
+  "revision": "9e2727f4250d3973839eecfa5c4b42e41b709a50",
+  "loader": "AutoModelForImageClassification",
+  "use_safetensors": false,
+  "class": "ViTForImageClassification",
+  "attn_implementation": "sdpa",
+  "attn_requested": "default",
+  "sdpa_backends_enabled": {
+   "flash": true,
+   "mem_efficient": true,
+   "math": true,
+   "cudnn": true
+  },
+  "param_dtypes": [
+   "torch.float16"
+  ],
+  "param_bytes": 608653264,
+  "buffer_bytes": 0
+ },
+ "inputs": {
+  "pixel_values": {
+   "shape": [
+    16,
+    3,
+    224,
+    224
+   ],
+   "dtype": "torch.float16",
+   "sha256": "771606bd742197766b2ff9c053f8d44e5829cce5b5232e273106ccec83e549f6"
+  }
+ },
+ "special_tokens_replaced_by_3": null,
+ "warmup": [],
+ "measures": [
+  {
+   "i": 0,
+   "ok": true,
+   "new_tokens": null,
+   "elapsed_s": 0.2749180140003773,
+   "start": {
+    "allocated": 609701888,
+    "reserved": 650117120
+   },
+   "peak": {
+    "allocated": 706957312,
+    "reserved": 769654784
+   },
+   "end_with_output": {
+    "allocated": 623071232,
+    "reserved": 769654784
+   },
+   "stats_end": {
+    "allocated_bytes.all.current": 623071232,
+    "allocated_bytes.all.peak": 706957312,
+    "reserved_bytes.all.current": 769654784,
+    "reserved_bytes.all.peak": 769654784,
+    "active_bytes.all.peak": 706957312,
+    "requested_bytes.all.peak": 705908688,
+    "segment.all.current": 10,
+    "allocation.all.allocated": 1496,
+    "allocation.all.freed": 1100,
+    "segment.all.allocated": 10,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 10,
+    "num_device_free": 0
+   },
+   "output_sha256": "7c845a253b821889e53f81ac6c85a502b3f0f1b314dacc53d69de1001412f979",
+   "released": {
+    "allocated": 618222080,
+    "reserved": 769654784
+   }
+  }
+ ],
+ "validation": {
+  "steps_checked": 1,
+  "all_finite": true,
+  "first_nonfinite_step": null
+ },
+ "timings_s": {
+  "model_load": 1.8298270919999595
+ },
+ "worker_wall_s": 2.6571342849997563
+}

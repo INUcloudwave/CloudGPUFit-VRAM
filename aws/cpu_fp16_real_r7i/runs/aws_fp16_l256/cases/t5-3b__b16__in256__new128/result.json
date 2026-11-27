@@ -1,0 +1,382 @@
+{
+ "condition_id": "t5-3b__b16__in256__new128",
+ "case": {
+  "index": 371,
+  "case_id": "t5-3b__b16__in256__new128",
+  "model": "google-t5/t5-3b",
+  "short": "t5-3b",
+  "kind": "text_encdec",
+  "dtype": "fp16",
+  "batch_size": 16,
+  "input_len": 256,
+  "new_tokens": 128,
+  "resolution": null,
+  "pilot": false
+ },
+ "model": "google-t5/t5-3b",
+ "revision": "bed96aab9ee46012a5046386105ee5fd0ac572f0",
+ "status": "ok",
+ "failed_stage": null,
+ "dtype_mode": "fp16_real_execution",
+ "protocol": {
+  "reference": "INUGPU vram_worker.py sha256 d06f0f15982c811c4bc6a24028f71728e461c6ee3651bcfd520ba49b0d675883",
+  "warmup": 3,
+  "compared_measure": "first measure (measure_0)",
+  "cpu_trace": "one invocation traced, replayed warmup x3 + measure x1 (identical requests, verified)",
+  "load_phase": "synthesized GPU from_pretrained requests (cgf680.load_emu)",
+  "attn_implementation_requested": "default (argument omitted)",
+  "generation_config": "GenerationConfig.from_model_config + update (hub generation_config unused)",
+  "inputs": "host seed 20261006; per invocation device copy (clone) kept until the record, then del"
+ },
+ "timings_s": {
+  "model_load": 10.008852705999743,
+  "trace_invocation": 647.1334933340004,
+  "trace_export": 2.4669515709992993,
+  "trace_parse": 6.415744198999164,
+  "shadow_match": 0.5647754900001019,
+  "xmem_replay": 96.06688713599942,
+  "attn_probe": 14.928382377000162,
+  "total_worker": 877.6007991839997
+ },
+ "files": {
+  "requests": "/exp/runs/aws_fp16_l256/cases/t5-3b__b16__in256__new128/invocation_fp16_requests.npz"
+ },
+ "environment": {
+  "python": "3.11.11",
+  "torch": "2.6.0+cu124",
+  "transformers": "4.52.4",
+  "device": "cpu",
+  "threads": 13,
+  "cpu_capability": "AVX512",
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "mem_limit": "15g",
+  "cpuset": "29"
+ },
+ "xmem": {
+  "commit": "1ee4bd08dda277a6248abee5b6d40e0d6067efaa",
+  "files": {
+   "perf_estimator/allocator/__init__.py": true,
+   "perf_estimator/allocator/allocator.py": true,
+   "perf_estimator/allocator/simulator.py": true,
+   "perf_estimator/allocator/_C2Python/llvm.py": true,
+   "perf_estimator/profiler/__init__.py": true,
+   "perf_estimator/profiler/memoy.py": true,
+   "perf_estimator/profiler/node.py": true,
+   "perf_estimator/config.py": true
+  },
+  "imported_from": "/work/xMem/perf_estimator/allocator/allocator.py",
+  "imported_matches_root": true,
+  "ok": true
+ },
+ "load_synthesis": {
+  "warmup_bytes": 7511203840,
+  "ckpt_skipped_unexpected": 1,
+  "tied_dup_loaded_then_freed": 0,
+  "keep_fp32": [
+   "wo"
+  ],
+  "loaded_into": "<model>",
+  "post_load_casts": 48,
+  "events": 1529,
+  "live_blocks": 509
+ },
+ "model_info": {
+  "class": "T5ForConditionalGeneration",
+  "attn_implementation": "eager",
+  "attn_implementation_fp16_load": "eager",
+  "attn_requested": "default"
+ },
+ "inputs": {
+  "input_ids": {
+   "shape": [
+    16,
+    256
+   ],
+   "dtype": "torch.int64",
+   "sha256": "7c484623050965e330e4436239462ba7689ea2c8b7377290d9daa0d20ff0160f"
+  },
+  "attention_mask": {
+   "shape": [
+    16,
+    256
+   ],
+   "dtype": "torch.int64",
+   "sha256": "7f359c344d1520daab697c52d31afa5610321993c6619d49fa8f98600921483f"
+  }
+ },
+ "special_tokens_replaced_by_3": [
+  0,
+  1,
+  0
+ ],
+ "generation_config": {
+  "max_length": 20,
+  "max_new_tokens": 128,
+  "min_length": 0,
+  "min_new_tokens": 128,
+  "early_stopping": false,
+  "max_time": null,
+  "stop_strings": null,
+  "do_sample": false,
+  "num_beams": 1,
+  "num_beam_groups": 1,
+  "penalty_alpha": null,
+  "dola_layers": null,
+  "use_cache": true,
+  "cache_implementation": null,
+  "cache_config": null,
+  "return_legacy_cache": null,
+  "prefill_chunk_size": null,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "min_p": null,
+  "typical_p": 1.0,
+  "epsilon_cutoff": 0.0,
+  "eta_cutoff": 0.0,
+  "diversity_penalty": 0.0,
+  "repetition_penalty": 1.0,
+  "encoder_repetition_penalty": 1.0,
+  "length_penalty": 1.0,
+  "no_repeat_ngram_size": 0,
+  "bad_words_ids": null,
+  "force_words_ids": null,
+  "renormalize_logits": false,
+  "constraints": null,
+  "forced_bos_token_id": null,
+  "forced_eos_token_id": null,
+  "remove_invalid_values": false,
+  "exponential_decay_length_penalty": null,
+  "suppress_tokens": null,
+  "begin_suppress_tokens": null,
+  "forced_decoder_ids": null,
+  "sequence_bias": null,
+  "token_healing": false,
+  "guidance_scale": null,
+  "low_memory": null,
+  "watermarking_config": null,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_scores": false,
+  "output_logits": null,
+  "return_dict_in_generate": false,
+  "pad_token_id": 0,
+  "bos_token_id": null,
+  "eos_token_id": 1,
+  "encoder_no_repeat_ngram_size": 0,
+  "decoder_start_token_id": 0,
+  "is_assistant": false,
+  "num_assistant_tokens": 20,
+  "num_assistant_tokens_schedule": "constant",
+  "assistant_confidence_threshold": 0.4,
+  "prompt_lookup_num_tokens": null,
+  "max_matching_ngram_size": null,
+  "assistant_early_exit": null,
+  "assistant_lookbehind": 10,
+  "target_lookbehind": 10,
+  "disable_compile": false,
+  "generation_kwargs": {},
+  "_from_model_config": true,
+  "transformers_version": "4.52.4"
+ },
+ "fp16_branch_patches": "not needed (native FP16 execution)",
+ "shadow_rule": "v1",
+ "profiler": {
+  "api": "torch.autograd._enable_profiler (kineto, low-level)",
+  "activities": [
+   "CPU"
+  ],
+  "profile_memory": true,
+  "record_shapes": false,
+  "with_stack": false,
+  "record_scopes": "USER_SCOPE only",
+  "sessions_per_worker": 1
+ },
+ "new_tokens": 128,
+ "trace_stats": {
+  "memory_events": 737428,
+  "ev_idx_missing": 0,
+  "ts_inversions_in_ev_idx_order": 0,
+  "skipped_alloc_outside_regions": 0,
+  "unmatched_frees": 3,
+  "addr_reuse_while_live": 0,
+  "free_size_mismatch": 0,
+  "marker_allocs": 3,
+  "live_requests_at_session_end": 0,
+  "live_request_bytes_at_session_end": 0,
+  "requests": 368711,
+  "frees": 368711,
+  "marker_positions": {
+   "M0_session_start": 0,
+   "M4_measure_end_with_output": 737419,
+   "M5_measure_end_output_released": 737422
+  }
+ },
+ "cublas_workspace_position": {
+  "first_gemm_func": "linear",
+  "ws_insert_rel": 56,
+  "rule": "right after the output request of the first GEMM-type call"
+ },
+ "fp16_emulation": {
+  "torch_function_calls": 43,
+  "emulated_casts": null,
+  "undetermined_casts": null,
+  "match": {
+   "mode": "fp16_real: no emulation"
+  },
+  "fp32_request_bytes": 393515278604,
+  "fp16_request_bytes": 393515278604
+ },
+ "after_load": {
+  "after_load": {
+   "reserved": 7514095616,
+   "allocated": 5703196672,
+   "peak_allocated_during_load": 7511998464,
+   "segments": 2
+  }
+ },
+ "runs": [
+  {
+   "run": "warmup_0",
+   "start": {
+    "reserved": 7514095616,
+    "allocated": 5703196672
+   },
+   "peak": {
+    "reserved": 8373927936,
+    "allocated": 8168283136
+   },
+   "end_with_output": {
+    "reserved": 8373927936,
+    "allocated": 5703279104
+   },
+   "released": {
+    "reserved": 8373927936,
+    "allocated": 5703196672
+   },
+   "segments_end": 46
+  },
+  {
+   "run": "warmup_1",
+   "start": {
+    "reserved": 8373927936,
+    "allocated": 5703196672
+   },
+   "peak": {
+    "reserved": 8474591232,
+    "allocated": 8168053760
+   },
+   "end_with_output": {
+    "reserved": 8474591232,
+    "allocated": 5703279104
+   },
+   "released": {
+    "reserved": 8474591232,
+    "allocated": 5703196672
+   },
+   "segments_end": 49
+  },
+  {
+   "run": "warmup_2",
+   "start": {
+    "reserved": 8474591232,
+    "allocated": 5703196672
+   },
+   "peak": {
+    "reserved": 8474591232,
+    "allocated": 8169233408
+   },
+   "end_with_output": {
+    "reserved": 8474591232,
+    "allocated": 5703279104
+   },
+   "released": {
+    "reserved": 8474591232,
+    "allocated": 5703196672
+   },
+   "segments_end": 49
+  },
+  {
+   "run": "measure_0",
+   "start": {
+    "reserved": 8474591232,
+    "allocated": 5703196672
+   },
+   "peak": {
+    "reserved": 8474591232,
+    "allocated": 8169233408
+   },
+   "end_with_output": {
+    "reserved": 8474591232,
+    "allocated": 5703279104
+   },
+   "released": {
+    "reserved": 8474591232,
+    "allocated": 5703196672
+   },
+   "segments_end": 49
+  }
+ ],
+ "replay": {
+  "oom": null,
+  "unknown_frees": 0,
+  "live_blocks_at_end": 509
+ },
+ "summary": {
+  "first_measure_start_reserved": 8474591232,
+  "first_measure_start_allocated": 5703196672,
+  "first_measure_peak_reserved": 8474591232,
+  "first_measure_peak_allocated": 8169233408,
+  "first_measure_end_with_output_reserved": 8474591232,
+  "first_measure_end_with_output_allocated": 5703279104,
+  "first_measure_released_reserved": 8474591232,
+  "first_measure_released_allocated": 5703196672,
+  "after_load_reserved": 7514095616,
+  "after_load_allocated": 5703196672,
+  "load_peak_allocated": 7511998464
+ },
+ "variant_with_cublas_workspace": {
+  "note": "NOT the CPU prediction: same replay + one 8.125 MiB GPU-only cuBLAS workspace request at warmup_0 start",
+  "first_measure_start_reserved": 8441036800,
+  "first_measure_start_allocated": 5711716352,
+  "first_measure_peak_reserved": 8441036800,
+  "first_measure_peak_allocated": 8176581632
+ },
+ "finite_check": "not checked (fp16_real CPU run)",
+ "attention_ops_cpu": {
+  "aten::bmm": 240,
+  "aten::softmax": 120,
+  "aten::_softmax": 120
+ },
+ "rss": {
+  "max_rss_bytes": 17953210368,
+  "stage_peak_rss_bytes": {
+   "init": 429785088,
+   "model_load": 14836158464,
+   "input_prep": 6548676608,
+   "trace_invocation": 12002406400,
+   "trace_export": 10444759040,
+   "trace_parse": 10416779264,
+   "xmem_replay": 10469134336,
+   "attn_probe": 10418008064
+  }
+ },
+ "runner": {
+  "scheduler": "run_aws",
+  "phase": "P",
+  "threads": 13,
+  "cpuset": "29",
+  "cores": 1,
+  "mem_limit": "15g",
+  "exit_code": 0,
+  "oom_killed": false,
+  "timed_out": false,
+  "wall_seconds": 881.9922995567322,
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "container": "cgfaws-371-P-907506572",
+  "worker_args": "--dtype-mode fp16_real"
+ }
+}
