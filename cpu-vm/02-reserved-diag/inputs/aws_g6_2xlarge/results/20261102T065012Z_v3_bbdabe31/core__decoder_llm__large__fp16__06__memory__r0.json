@@ -1,0 +1,1207 @@
+{
+  "case": {
+    "case_id": "core__decoder_llm__large__fp16__06",
+    "suite": "core",
+    "workload_type": "decoder_llm",
+    "model": "openai-community/gpt2-xl",
+    "size": "large",
+    "dtype": "fp16",
+    "params": {
+      "batch_size": 1,
+      "seq_len": 512,
+      "max_new_tokens": 64
+    }
+  },
+  "mode": "memory",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.0018619520005813683,
+    "model_reuse": 0.0013824119996570516,
+    "input_and_validation": 0.0036541230001603253,
+    "finite_output_check": 0.05089586799931567,
+    "warmup": 1.9085718060005092,
+    "measurement": 5.778349061999506,
+    "postprocessing": 0.0007272970005942625,
+    "complete": 2.3949999558681156e-05
+  },
+  "model_reused": true,
+  "startup_metrics_scope": "reused_resident_model",
+  "startup_memory_samples": [
+    {
+      "query_begin_ns": 4835055726010,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3175283712,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4835056070628
+    },
+    {
+      "query_begin_ns": 4835056652981,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3175283712,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4835057049070
+    }
+  ],
+  "startup_nvml_sampled_peak_bytes": 3900702720,
+  "startup_sampling_errors": [],
+  "startup_peak_allocated_bytes": 3175283712,
+  "startup_peak_reserved_bytes": 3657433088,
+  "memory_baseline": {
+    "parameter_storage_bytes": 3115222400,
+    "buffer_storage_bytes": 50331744,
+    "resident_allocated_bytes": 3175283712,
+    "resident_reserved_bytes": 3657433088
+  },
+  "environment": {
+    "gpu": "NVIDIA L4",
+    "total_vram_bytes": 24152899584,
+    "cuda_total_vram_bytes": 23661248512,
+    "driver": "595.112.07",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "7.0.0-1016-aws",
+    "cpu_threads": 8,
+    "available_vcpus": 8,
+    "revision": "15ea56dee5df4983c59b2538573817e1667135e2",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "g6.2xlarge"
+  },
+  "actual_input_shapes": {
+    "input_ids": [
+      1,
+      512
+    ],
+    "attention_mask": [
+      1,
+      512
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "input_ids": "2b3d99c5093e4385234821762850d57e1fa2cc213cca5f2f025b984746caa74f",
+    "attention_mask": "8a472efbc41a4502e6da085422880bc742625c1187f2d36ed39e669d736ac113"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 4837020275070,
+      "end_ns": 4838922116642,
+      "elapsed_ms": 1901.841572,
+      "actual_new_tokens_per_sample": 64
+    },
+    {
+      "start_ns": 4838922133333,
+      "end_ns": 4840851984062,
+      "elapsed_ms": 1929.850729,
+      "actual_new_tokens_per_sample": 64
+    },
+    {
+      "start_ns": 4840852000672,
+      "end_ns": 4842798522020,
+      "elapsed_ms": 1946.521348,
+      "actual_new_tokens_per_sample": 64
+    }
+  ],
+  "component_snapshots": [],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 72,
+    "sm_clock_mhz": 2040,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 73,
+    "sm_clock_mhz": 2040,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "memory_samples": [
+    {
+      "query_begin_ns": 4837019643435,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3175283712,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837020024574,
+      "cached_unused_bytes": 482149376,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837070254976,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3412394496,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837070659565,
+      "cached_unused_bytes": 245038592,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837120743564,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3333893632,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837121107352,
+      "cached_unused_bytes": 323539456,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837171211741,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3334391296,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837171518418,
+      "cached_unused_bytes": 323041792,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837221606637,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3334953472,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837222154839,
+      "cached_unused_bytes": 322479616,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837272248338,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3337052672,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837272607456,
+      "cached_unused_bytes": 320380416,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837322712475,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3336965120,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837323062623,
+      "cached_unused_bytes": 320467968,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837373185622,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3337293824,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837373509770,
+      "cached_unused_bytes": 320139264,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837423596968,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3337740800,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837423939226,
+      "cached_unused_bytes": 319692288,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837474028055,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339079168,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837474427774,
+      "cached_unused_bytes": 318353920,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837524533383,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339010560,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837525077175,
+      "cached_unused_bytes": 318422528,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837575163674,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339180544,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837575489631,
+      "cached_unused_bytes": 318252544,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837625576040,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339265024,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837625894257,
+      "cached_unused_bytes": 318168064,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837676000016,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339720704,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837676342583,
+      "cached_unused_bytes": 317712384,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837726447293,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341017600,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837726753580,
+      "cached_unused_bytes": 316415488,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837776841568,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341031424,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837777220487,
+      "cached_unused_bytes": 316401664,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837827306335,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341198848,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837827654283,
+      "cached_unused_bytes": 316234240,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837877762042,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341689856,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837878157941,
+      "cached_unused_bytes": 315743232,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837928244330,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3342255616,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837928569797,
+      "cached_unused_bytes": 315177472,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4837978652586,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344448512,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4837979176858,
+      "cached_unused_bytes": 312984576,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838029259926,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344565760,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838029591884,
+      "cached_unused_bytes": 312867328,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838079678332,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344560128,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838080041411,
+      "cached_unused_bytes": 312872960,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838130145509,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344938496,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838130440256,
+      "cached_unused_bytes": 312494592,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838180554965,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346248704,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838180866582,
+      "cached_unused_bytes": 311184384,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838230952821,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346364928,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838231298089,
+      "cached_unused_bytes": 311068160,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838281384477,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346333696,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838281672954,
+      "cached_unused_bytes": 311099392,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838331790393,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346544640,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838332126401,
+      "cached_unused_bytes": 310888448,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838382214199,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3347008512,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838382550737,
+      "cached_unused_bytes": 310424576,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838432666546,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348503040,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838433033575,
+      "cached_unused_bytes": 308930048,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838483119213,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348550144,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838483687286,
+      "cached_unused_bytes": 308882944,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838533788415,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348908544,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838534173854,
+      "cached_unused_bytes": 308524544,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838584259932,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3349027328,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838584550659,
+      "cached_unused_bytes": 308405760,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838634654638,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3349618688,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838634959645,
+      "cached_unused_bytes": 307814400,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838685045443,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3351057408,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838685373581,
+      "cached_unused_bytes": 306375680,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838735480880,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352274432,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838735807567,
+      "cached_unused_bytes": 305158656,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838785894896,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352330240,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838786210613,
+      "cached_unused_bytes": 305102848,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838836313442,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352473088,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838836620819,
+      "cached_unused_bytes": 304960000,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838886707847,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3353723392,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838887086746,
+      "cached_unused_bytes": 303709696,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838937196255,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339064320,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838937543133,
+      "cached_unused_bytes": 318368768,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4838987636022,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3376879616,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4838988328947,
+      "cached_unused_bytes": 280553472,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839038417386,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3334038016,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839038774904,
+      "cached_unused_bytes": 323395072,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839088863993,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3334538240,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839089234261,
+      "cached_unused_bytes": 322894848,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839139325660,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3335071232,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839139634907,
+      "cached_unused_bytes": 322361856,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839189722225,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3335569408,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839190088954,
+      "cached_unused_bytes": 321863680,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839240179642,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3337004032,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839240579412,
+      "cached_unused_bytes": 320429056,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839290666790,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3337403904,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839290977607,
+      "cached_unused_bytes": 320029184,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839341080056,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3337893888,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839341391313,
+      "cached_unused_bytes": 319539200,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839391476612,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339219456,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839391806049,
+      "cached_unused_bytes": 318213632,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839441894298,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339088384,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839442272446,
+      "cached_unused_bytes": 318344704,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839492362355,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339117568,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839493033950,
+      "cached_unused_bytes": 318315520,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839543124349,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339372544,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839543482817,
+      "cached_unused_bytes": 318060544,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839593571566,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339777536,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839593880673,
+      "cached_unused_bytes": 317655552,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839643988312,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3342580224,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839644317159,
+      "cached_unused_bytes": 314852864,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839694405988,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341197824,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839694708075,
+      "cached_unused_bytes": 316235264,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839744790703,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341274624,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839745213263,
+      "cached_unused_bytes": 316158464,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839795326782,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341827072,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839795641199,
+      "cached_unused_bytes": 315606016,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839845732708,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3342328832,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839846078216,
+      "cached_unused_bytes": 315104256,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839896165394,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344417792,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839896477721,
+      "cached_unused_bytes": 313015296,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839946567360,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344451072,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839946874137,
+      "cached_unused_bytes": 312982016,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4839996962686,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344602624,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4839997329144,
+      "cached_unused_bytes": 312830464,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840047418242,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344945152,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840048093988,
+      "cached_unused_bytes": 312487936,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840098201677,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3347159552,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840098570165,
+      "cached_unused_bytes": 310273536,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840148658774,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346404864,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840148995831,
+      "cached_unused_bytes": 311028224,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840199127871,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346359296,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840199437098,
+      "cached_unused_bytes": 311073792,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840249524027,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348282368,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840249832514,
+      "cached_unused_bytes": 309150720,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840299920362,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346964992,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840300256110,
+      "cached_unused_bytes": 310468096,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840350342608,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348433920,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840350648226,
+      "cached_unused_bytes": 308999168,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840400769175,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348513280,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840401120123,
+      "cached_unused_bytes": 308919808,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840451208801,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348817408,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840451548909,
+      "cached_unused_bytes": 308615680,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840501637688,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348976128,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840501958195,
+      "cached_unused_bytes": 308456960,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840552046614,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3349506560,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840552591746,
+      "cached_unused_bytes": 307926528,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840602681385,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352820224,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840603066793,
+      "cached_unused_bytes": 304612864,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840653157642,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352274944,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840653463599,
+      "cached_unused_bytes": 305158144,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840703571988,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352386560,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840703896245,
+      "cached_unused_bytes": 305046528,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840754041025,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352378880,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840754361803,
+      "cached_unused_bytes": 305054208,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840804452021,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3353671168,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840804766378,
+      "cached_unused_bytes": 303761920,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840854854277,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3217077248,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840855225945,
+      "cached_unused_bytes": 440355840,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840905336424,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3406167040,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840905631301,
+      "cached_unused_bytes": 251266048,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4840955720490,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3333930496,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4840956039027,
+      "cached_unused_bytes": 323502592,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841006125886,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3334393344,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841006447803,
+      "cached_unused_bytes": 323039744,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841056557572,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3334927360,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841057470703,
+      "cached_unused_bytes": 322505728,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841107585872,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3335466496,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841107921220,
+      "cached_unused_bytes": 321966592,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841158052079,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3336976896,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841158393547,
+      "cached_unused_bytes": 320456192,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841208480776,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3338946048,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841208796113,
+      "cached_unused_bytes": 318487040,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841258883291,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3337622528,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841259232789,
+      "cached_unused_bytes": 319810560,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841309342448,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339070464,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841309638805,
+      "cached_unused_bytes": 318362624,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841359726714,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339138560,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841360081172,
+      "cached_unused_bytes": 318294528,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841410168420,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339150336,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841410464037,
+      "cached_unused_bytes": 318282752,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841460564396,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339230208,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841460863393,
+      "cached_unused_bytes": 318202880,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841510951091,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3339601408,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841511279589,
+      "cached_unused_bytes": 317831680,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841561372377,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3340870656,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841561995632,
+      "cached_unused_bytes": 316562432,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841612108111,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3340928512,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841612467229,
+      "cached_unused_bytes": 316504576,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841662569898,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341248512,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841662883695,
+      "cached_unused_bytes": 316184576,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841712972334,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3341514752,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841713329842,
+      "cached_unused_bytes": 315918336,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841763419150,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3342056448,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841763718397,
+      "cached_unused_bytes": 315376640,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841813806546,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344461824,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841814175244,
+      "cached_unused_bytes": 312971264,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841864263443,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344418816,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841864559060,
+      "cached_unused_bytes": 313014272,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841914656538,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344560128,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841914965115,
+      "cached_unused_bytes": 312872960,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4841965072474,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3344704000,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4841965368011,
+      "cached_unused_bytes": 312729088,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842015457290,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3345146880,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842015777177,
+      "cached_unused_bytes": 312286208,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842065865596,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346365440,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842066500730,
+      "cached_unused_bytes": 311067648,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842116591299,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346356224,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842116935397,
+      "cached_unused_bytes": 311076864,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842167026455,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346276352,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842167358293,
+      "cached_unused_bytes": 311156736,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842217448161,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3346640384,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842217765838,
+      "cached_unused_bytes": 310792704,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842267856697,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3347083776,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842268223345,
+      "cached_unused_bytes": 310349312,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842318326134,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348432896,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842318663912,
+      "cached_unused_bytes": 309000192,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842368753011,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348743168,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842369100729,
+      "cached_unused_bytes": 308689920,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842419212728,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3348786176,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842419493584,
+      "cached_unused_bytes": 308646912,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842469583483,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3349094912,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842469907200,
+      "cached_unused_bytes": 308338176,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842519999529,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3349661184,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842520342827,
+      "cached_unused_bytes": 307771904,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842570455156,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352176128,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842570787093,
+      "cached_unused_bytes": 305256960,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842620875882,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352411648,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842621527827,
+      "cached_unused_bytes": 305021440,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842671621155,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352348672,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842671970533,
+      "cached_unused_bytes": 305084416,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842722076913,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3352431616,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842722368359,
+      "cached_unused_bytes": 305001472,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842772456428,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3353887232,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842772745334,
+      "cached_unused_bytes": 303545856,
+      "outside_reserved_bytes": 243269632
+    },
+    {
+      "query_begin_ns": 4842798702234,
+      "nvml_process_bytes": 3900702720,
+      "allocated_bytes": 3175283712,
+      "reserved_bytes": 3657433088,
+      "query_end_ns": 4842798987551,
+      "cached_unused_bytes": 482149376,
+      "outside_reserved_bytes": 243269632
+    }
+  ],
+  "sampling_errors": [],
+  "nvml_process_sampled_peak_bytes": 3900702720,
+  "nvml_sample_coverage": 1.0,
+  "nvml_status": "ok",
+  "inference_peak_allocated_bytes": 3465082880,
+  "inference_peak_reserved_bytes": 3657433088,
+  "scope": "full_generation",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": true,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 73,
+  "worker_main_seconds": 7.745466469999883,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": {
+    "seconds": 0.08857124899986957,
+    "allocated_bytes": 3175283712,
+    "reserved_bytes": 3657433088,
+    "allocator_cache_retained": true
+  },
+  "between_mode_idle": {
+    "seconds": 1.0006945939994694,
+    "temperature_c": 70,
+    "utilization_percent": 0,
+    "device_used_mib": 4196.875
+  },
+  "case_start_gpu_state": [
+    0.0,
+    68.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    4196.875,
+    70,
+    0
+  ],
+  "worker_exit_code": 0
+}

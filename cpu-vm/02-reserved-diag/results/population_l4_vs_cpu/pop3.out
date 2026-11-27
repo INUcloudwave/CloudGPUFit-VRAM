@@ -1,0 +1,39 @@
+first_logits keys: ['finite_check_scope', 'scope', 'timed_region'] first_token_logits CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing
+decoder_llm big 34 first_logits peak within 3% of memory peak: 23 | fl>=mem: 9
+text_encdec big 53 first_logits peak within 3% of memory peak: 53 | fl>=mem: 18
+vision_cls big 0 first_logits peak within 3% of memory peak: 0 | fl>=mem: 0
+
+-- decoder_llm
+  small__fp16__12              cpu      928 L4     1678 (+45%) load     474 fl     1672 | alloc cpu     717 L4     720 (+0%)
+  small__fp16__04              cpu      680 L4     1172 (+42%) load     474 fl     1172 | alloc cpu     567 L4     571 (+1%)
+  small__fp16__11              cpu      694 L4     1174 (+41%) load     474 fl     1172 | alloc cpu     563 L4     567 (+1%)
+  small__fp16__05              cpu      294 L4      486 (+40%) load     474 fl      486 | alloc cpu     276 L4     280 (+1%)
+  small__fp16__13              cpu      468 L4      726 (+36%) load     474 fl      724 | alloc cpu     416 L4     418 (+1%)
+  small__fp16__03              cpu      472 L4      730 (+35%) load     474 fl      676 | alloc cpu     412 L4     414 (+1%)
+-- text_encdec
+  small__fp16__04              cpu      132 L4      274 (+52%) load     272 fl      274 | alloc cpu     119 L4     127 (+6%)
+  small__fp16__07              cpu      134 L4      278 (+52%) load     272 fl      278 | alloc cpu     124 L4     131 (+6%)
+  small__fp16__01              cpu      134 L4      276 (+51%) load     272 fl      276 | alloc cpu     124 L4     131 (+6%)
+  small__fp16__09              cpu      134 L4      276 (+51%) load     272 fl      276 | alloc cpu     124 L4     131 (+6%)
+  small__fp32__04              cpu      244 L4      500 (+51%) load     494 fl      498 | alloc cpu     237 L4     245 (+3%)
+  small__fp16__10              cpu      136 L4      278 (+51%) load     272 fl      276 | alloc cpu     124 L4     131 (+6%)
+-- vision_cls
+  small__bf16__08              cpu      148 L4       66 (-124%) load      26 fl        0 | alloc cpu     122 L4      46 (-165%)
+  small__bf16__07              cpu       88 L4       50 (-76%) load      26 fl        0 | alloc cpu      73 L4      32 (-126%)
+  small__bf16__01              cpu       50 L4       30 (-67%) load      26 fl        0 | alloc cpu      29 L4      21 (-37%)
+  small__bf16__05              cpu      206 L4      132 (-56%) load      26 fl        0 | alloc cpu     139 L4     110 (-27%)
+  medium__bf16__08             cpu      160 L4      106 (-51%) load      82 fl        0 | alloc cpu     138 L4      91 (-51%)
+  small__fp16__02              cpu       28 L4       48 (+42%) load      26 fl        0 | alloc cpu      20 L4      27 (+27%)
+-- decoder_llm alloc err>20%:
+  mall__bf16__02               alloc cpu     433 L4     338 (-28%) res err +3%
+  mall__bf16__03               alloc cpu     607 L4     414 (-46%) res err +9%
+  mall__bf16__04               alloc cpu     956 L4     571 (-67%) res err +8%
+  mall__bf16__06               alloc cpu     433 L4     337 (-29%) res err +3%
+  mall__bf16__07               alloc cpu     522 L4     374 (-40%) res err +8%
+  mall__bf16__11               alloc cpu     956 L4     567 (-69%) res err +6%
+  mall__bf16__12               alloc cpu    1307 L4     720 (-82%) res err +11%
+  mall__bf16__13               alloc cpu     606 L4     418 (-45%) res err +9%
+  mall__bf16__14               alloc cpu     522 L4     374 (-40%) res err +8%
+  edium__bf16__04              alloc cpu    1582 L4    1201 (-32%) res err +3%
+  edium__bf16__11              alloc cpu    1582 L4    1197 (-32%) res err +3%
+  edium__bf16__12              alloc cpu    2022 L4    1441 (-40%) res err +3%

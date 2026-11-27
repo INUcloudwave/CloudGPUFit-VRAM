@@ -1,0 +1,413 @@
+{
+ "schema": "cgf-reserved-diag-manifest/1",
+ "created": "2026-11-10",
+ "experiment_root_on_inuos": "/home/inuos/cgf-reserved-diag-20261110",
+ "question": [
+  "Q1 how much does differing initial cache / execution history change reserved",
+  "Q2 do xMem and PyTorch 2.6 allocator make the same decisions for the same requests",
+  "Q3 after matching history, do residual differences come from GPU-only requests (workspace etc.), intermediate tensors or free timing"
+ ],
+ "reference_software": {
+  "torch": "2.6.0+cu124",
+  "transformers": "4.52.4",
+  "python": "3.11.11",
+  "cuda_runtime": "12.4",
+  "xmem": {
+   "repo": "Stone-ResearchLife/xMem",
+   "commit": "1ee4bd08dda277a6248abee5b6d40e0d6067efaa",
+   "allocator_lock_sha256": "352dff3f12e487dd42384f0154ff8f70923f8bf136a48774b39e266e405ff6f1"
+  },
+  "previous_gpu_image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+  "previous_gpu_worker_sha256": "4018cd8ef09cef14be3e474845b3476495201769d47a7a0763f1f2961e07f651"
+ },
+ "required_process_settings": {
+  "CUDA_MODULE_LOADING": "LAZY (set explicitly before importing torch; record the value and, if possible, cuModuleGetLoadingMode)",
+  "PYTORCH_CUDA_ALLOC_CONF": "unset (record actual)",
+  "CUBLAS_WORKSPACE_CONFIG": "unset (record actual)",
+  "CUBLASLT_WORKSPACE_SIZE": "unset (record actual)",
+  "PYTORCH_NO_CUDA_MEMORY_CACHING": "unset",
+  "torch.manual_seed": 20261006,
+  "allow_tf32": false,
+  "cudnn.benchmark": false,
+  "cudnn.allow_tf32": false,
+  "torch.set_num_threads": 8,
+  "attention_implementation": "eager (HF attn_implementation; unrelated to CUDA module loading EAGER/LAZY)",
+  "isolation": "single GPU, no other GPU process, fresh process per (case, run_id)"
+ },
+ "cases": [
+  {
+   "case_id": "core__decoder_llm__small__fp16__01",
+   "role": "basic comparison",
+   "workload_type": "decoder_llm",
+   "model": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "use_safetensors": true,
+   "model_config_sha256_cpu_input": "97c2a672ee6388b8328b1112203a62ec414dd53e9266f12d74ca769bbe5b875e",
+   "dtype": "fp16",
+   "batch_size": 1,
+   "seq_len": 256,
+   "max_new_tokens": 64,
+   "inputs": {
+    "recipe": "g=torch.Generator().manual_seed(20261006); input_ids=torch.randint(3, config.vocab_size, (batch, seq_len), generator=g); input_ids[input_ids==tok]=3 for tok in (pad,eos,bos) if int; attention_mask=torch.ones(batch, seq_len, dtype=torch.long). Created on CPU, moved with .to('cuda') inside every invocation.",
+    "expected_input_ids_sha256": "d16e737f0bb2f7606fbd7a9b2be943fe296603726d9c763ca6092d5b32f30fc6",
+    "expected_attention_mask_sha256": "924ae03b6111734d8ab1d2d4c88ec6a7da5ba6612c50b2f0e3c27d0511980e0f",
+    "sha_definition": "sha256(tensor.contiguous().view(torch.uint8).numpy().tobytes()) of the CPU tensor"
+   },
+   "generate_kwargs": {
+    "do_sample": false,
+    "num_beams": 1,
+    "use_cache": true,
+    "min_new_tokens": 64,
+    "max_new_tokens": 64,
+    "pad_token_id": "config.pad_token_id or config.eos_token_id (50256)",
+    "return_dict_in_generate": false,
+    "output_scores": false,
+    "output_attentions": false,
+    "output_hidden_states": false
+   },
+   "model_load": {
+    "class": "AutoModelForCausalLM",
+    "kwargs": {
+     "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+     "torch_dtype": "fp16",
+     "low_cpu_mem_usage": true,
+     "device_map": {
+      "": "cuda:0"
+     },
+     "use_safetensors": true,
+     "local_files_only": true,
+     "attn_implementation": "eager"
+    },
+    "then": ".to(device='cuda', dtype=dtype).eval(); config.output_attentions=False; config.output_hidden_states=False"
+   },
+   "cpu_production_baseline": {
+    "source": "CloudGPUFit_CPU_predictions_20261110 (prediction_version 4-native-inference-single-request)",
+    "predicted_allocated_bytes": 310894080,
+    "predicted_reserved_bytes": 346030080,
+    "conditions": "from_config random weights, warmup=0, measured=1, empty allocator + synthetic resident weights+inputs, xMem 1ee4bd0, gpu_memory_gb=80"
+   },
+   "previous_L4_reference_only": {
+    "note": "g6.2xlarge 2026-11-02 run, profile local_core, hybrid isolation. Reference values, NOT targets for a new GPU.",
+    "performance": {
+     "after_load_allocated": 262654976,
+     "after_load_reserved": 497025024,
+     "startup_peak_allocated": 405255168,
+     "startup_peak_reserved": 497025024,
+     "inference_peak_allocated": 313253376,
+     "inference_peak_reserved": 515899392
+    },
+    "memory": {
+     "at_mode_start_allocated": 272092160,
+     "at_mode_start_reserved": 515899392,
+     "inference_peak_allocated": 313253376,
+     "inference_peak_reserved": 515899392
+    },
+    "environment": {
+     "gpu": "NVIDIA L4",
+     "total_vram_bytes": 24152899584,
+     "cuda_total_vram_bytes": 23661248512,
+     "driver": "595.112.07",
+     "torch": "2.6.0+cu124",
+     "transformers": "4.52.4",
+     "cuda_runtime": "12.4",
+     "python": "3.11.11",
+     "kernel": "7.0.0-1016-aws",
+     "cpu_threads": 8,
+     "available_vcpus": 8,
+     "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+     "attention": "eager",
+     "tf32": false,
+     "seed": 20261006,
+     "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+     "instance_label": "g6.2xlarge"
+    }
+   }
+  },
+  {
+   "case_id": "core__decoder_llm__small__fp16__12",
+   "role": "large reserved error",
+   "workload_type": "decoder_llm",
+   "model": "openai-community/gpt2",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "use_safetensors": true,
+   "model_config_sha256_cpu_input": "97c2a672ee6388b8328b1112203a62ec414dd53e9266f12d74ca769bbe5b875e",
+   "dtype": "fp16",
+   "batch_size": 4,
+   "seq_len": 768,
+   "max_new_tokens": 128,
+   "inputs": {
+    "recipe": "g=torch.Generator().manual_seed(20261006); input_ids=torch.randint(3, config.vocab_size, (batch, seq_len), generator=g); input_ids[input_ids==tok]=3 for tok in (pad,eos,bos) if int; attention_mask=torch.ones(batch, seq_len, dtype=torch.long). Created on CPU, moved with .to('cuda') inside every invocation.",
+    "expected_input_ids_sha256": "e64f48260f800ef443656726625b4c2949fd5ceb46a2f653fa5c5464b1696998",
+    "expected_attention_mask_sha256": "917e4da8f850635ab48ff08553144a383450d5ec2bc6d568c0bc75d15f8d2f76",
+    "sha_definition": "sha256(tensor.contiguous().view(torch.uint8).numpy().tobytes()) of the CPU tensor"
+   },
+   "generate_kwargs": {
+    "do_sample": false,
+    "num_beams": 1,
+    "use_cache": true,
+    "min_new_tokens": 128,
+    "max_new_tokens": 128,
+    "pad_token_id": "config.pad_token_id or config.eos_token_id (50256)",
+    "return_dict_in_generate": false,
+    "output_scores": false,
+    "output_attentions": false,
+    "output_hidden_states": false
+   },
+   "model_load": {
+    "class": "AutoModelForCausalLM",
+    "kwargs": {
+     "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+     "torch_dtype": "fp16",
+     "low_cpu_mem_usage": true,
+     "device_map": {
+      "": "cuda:0"
+     },
+     "use_safetensors": true,
+     "local_files_only": true,
+     "attn_implementation": "eager"
+    },
+    "then": ".to(device='cuda', dtype=dtype).eval(); config.output_attentions=False; config.output_hidden_states=False"
+   },
+   "cpu_production_baseline": {
+    "source": "CloudGPUFit_CPU_predictions_20261110 (prediction_version 4-native-inference-single-request)",
+    "predicted_allocated_bytes": 751895552,
+    "predicted_reserved_bytes": 973078528,
+    "conditions": "from_config random weights, warmup=0, measured=1, empty allocator + synthetic resident weights+inputs, xMem 1ee4bd0, gpu_memory_gb=80"
+   },
+   "previous_L4_reference_only": {
+    "note": "g6.2xlarge 2026-11-02 run, profile local_core, hybrid isolation. Reference values, NOT targets for a new GPU.",
+    "performance": {
+     "after_load_allocated": 262654976,
+     "after_load_reserved": 497025024,
+     "startup_peak_allocated": 405255168,
+     "startup_peak_reserved": 497025024,
+     "inference_peak_allocated": 754648064,
+     "inference_peak_reserved": 1759510528
+    },
+    "memory": {
+     "at_mode_start_allocated": 271174656,
+     "at_mode_start_reserved": 1759510528,
+     "inference_peak_allocated": 754648064,
+     "inference_peak_reserved": 1759510528
+    },
+    "environment": {
+     "gpu": "NVIDIA L4",
+     "total_vram_bytes": 24152899584,
+     "cuda_total_vram_bytes": 23661248512,
+     "driver": "595.112.07",
+     "torch": "2.6.0+cu124",
+     "transformers": "4.52.4",
+     "cuda_runtime": "12.4",
+     "python": "3.11.11",
+     "kernel": "7.0.0-1016-aws",
+     "cpu_threads": 8,
+     "available_vcpus": 8,
+     "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+     "attention": "eager",
+     "tf32": false,
+     "seed": 20261006,
+     "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+     "instance_label": "g6.2xlarge"
+    }
+   }
+  },
+  {
+   "case_id": "core__decoder_llm__medium__fp32__12",
+   "role": "workspace and large error candidate",
+   "workload_type": "decoder_llm",
+   "model": "openai-community/gpt2-medium",
+   "revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+   "use_safetensors": true,
+   "model_config_sha256_cpu_input": "3d9f3419acddacae2da8b14491fd107e2bad9ac3ec5c724e21723a9f940c3837",
+   "dtype": "fp32",
+   "batch_size": 4,
+   "seq_len": 768,
+   "max_new_tokens": 128,
+   "inputs": {
+    "recipe": "g=torch.Generator().manual_seed(20261006); input_ids=torch.randint(3, config.vocab_size, (batch, seq_len), generator=g); input_ids[input_ids==tok]=3 for tok in (pad,eos,bos) if int; attention_mask=torch.ones(batch, seq_len, dtype=torch.long). Created on CPU, moved with .to('cuda') inside every invocation.",
+    "expected_input_ids_sha256": "e64f48260f800ef443656726625b4c2949fd5ceb46a2f653fa5c5464b1696998",
+    "expected_attention_mask_sha256": "917e4da8f850635ab48ff08553144a383450d5ec2bc6d568c0bc75d15f8d2f76",
+    "sha_definition": "sha256(tensor.contiguous().view(torch.uint8).numpy().tobytes()) of the CPU tensor"
+   },
+   "generate_kwargs": {
+    "do_sample": false,
+    "num_beams": 1,
+    "use_cache": true,
+    "min_new_tokens": 128,
+    "max_new_tokens": 128,
+    "pad_token_id": "config.pad_token_id or config.eos_token_id (50256)",
+    "return_dict_in_generate": false,
+    "output_scores": false,
+    "output_attentions": false,
+    "output_hidden_states": false
+   },
+   "model_load": {
+    "class": "AutoModelForCausalLM",
+    "kwargs": {
+     "revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+     "torch_dtype": "fp32",
+     "low_cpu_mem_usage": true,
+     "device_map": {
+      "": "cuda:0"
+     },
+     "use_safetensors": true,
+     "local_files_only": true,
+     "attn_implementation": "eager"
+    },
+    "then": ".to(device='cuda', dtype=dtype).eval(); config.output_attentions=False; config.output_hidden_states=False"
+   },
+   "cpu_production_baseline": {
+    "source": "CloudGPUFit_CPU_predictions_20261110 (prediction_version 4-native-inference-single-request)",
+    "predicted_allocated_bytes": 2980687872,
+    "predicted_reserved_bytes": 3724541952,
+    "conditions": "from_config random weights, warmup=0, measured=1, empty allocator + synthetic resident weights+inputs, xMem 1ee4bd0, gpu_memory_gb=80"
+   },
+   "previous_L4_reference_only": {
+    "note": "g6.2xlarge 2026-11-02 run, profile local_core, hybrid isolation. Reference values, NOT targets for a new GPU.",
+    "performance": {
+     "after_load_allocated": 1444470784,
+     "after_load_reserved": 1447034880,
+     "startup_peak_allocated": 1444470784,
+     "startup_peak_reserved": 1447034880,
+     "inference_peak_allocated": 2989207552,
+     "inference_peak_reserved": 4796186624
+    },
+    "memory": {
+     "at_mode_start_allocated": 1452990464,
+     "at_mode_start_reserved": 4796186624,
+     "inference_peak_allocated": 2989207552,
+     "inference_peak_reserved": 4796186624
+    },
+    "environment": {
+     "gpu": "NVIDIA L4",
+     "total_vram_bytes": 24152899584,
+     "cuda_total_vram_bytes": 23661248512,
+     "driver": "595.112.07",
+     "torch": "2.6.0+cu124",
+     "transformers": "4.52.4",
+     "cuda_runtime": "12.4",
+     "python": "3.11.11",
+     "kernel": "7.0.0-1016-aws",
+     "cpu_threads": 8,
+     "available_vcpus": 8,
+     "revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+     "attention": "eager",
+     "tf32": false,
+     "seed": 20261006,
+     "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+     "instance_label": "g6.2xlarge"
+    }
+   }
+  }
+ ],
+ "runs": [
+  {
+   "run_id": "R0_aws_replica",
+   "group": "reference",
+   "purpose": "Reproduce the previous AWS per-case structure (bench_worker_v3, local_core, hybrid, allocator cache retained).",
+   "steps": [
+    [
+     "model_load",
+     1
+    ],
+    [
+     "performance/finite_check",
+     1
+    ],
+    [
+     "performance/warmup",
+     1
+    ],
+    [
+     "performance/measure",
+     5
+    ],
+    [
+     "memory/between_modes",
+     1
+    ],
+    [
+     "memory/finite_check",
+     1
+    ],
+    [
+     "memory/warmup",
+     1
+    ],
+    [
+     "memory/measure",
+     3
+    ]
+   ],
+   "notes": [
+    "model_load = from_pretrained(..., device_map cuda:0).to(cuda,dtype).eval() in the same process",
+    "between_modes = torch.cuda.synchronize(); gc.collect(); NO empty_cache (keep_allocator_cache=True); model reused; config/generation_config deep-copied back; CPU/CUDA RNG restored",
+    "torch.cuda.reset_peak_memory_stats() before model load and before each measurement block (peak reset only, not a cache release)",
+    "tokens/components modes ran after memory in the original and cannot affect memory-mode values: omitted"
+   ]
+  },
+  {
+   "run_id": "R1_controlled",
+   "group": "reference",
+   "purpose": "CPU-matching controlled history. CPU trace = prefix of R0 (identical first 5 inference steps).",
+   "steps": [
+    [
+     "model_load",
+     1
+    ],
+    [
+     "controlled/finite_check",
+     1
+    ],
+    [
+     "controlled/warmup",
+     1
+    ],
+    [
+     "controlled/measure",
+     3
+    ]
+   ]
+  },
+  {
+   "run_id": "R2_cold_single",
+   "group": "reference",
+   "purpose": "One generate after model load (no finite check, no warmup): separates load history from repeated-request history.",
+   "steps": [
+    [
+     "model_load",
+     1
+    ],
+    [
+     "single/measure",
+     1
+    ]
+   ]
+  },
+  {
+   "run_id": "D1_cold_single_empty_cache",
+   "group": "diagnostic_only",
+   "purpose": "As R2 but torch.cuda.empty_cache() after model load. Closest GPU analogue of the CPU baseline initial state. NOT the original condition.",
+   "steps": [
+    [
+     "model_load",
+     1
+    ],
+    [
+     "empty_cache",
+     1
+    ],
+    [
+     "single/measure",
+     1
+    ]
+   ]
+  }
+ ],
+ "phase_naming": "phase = '<mode>/<step>' exactly as in runs[].steps; invocation = 0-based index inside that phase",
+ "uncontrolled_or_differing_factors": [
+  "CPU trace uses from_config random weights by default; GPU uses pretrained weights. Request sizes are not data dependent for these greedy, min_new_tokens=max_new_tokens runs; checked on CPU for gpt2 fp16_01 (pretrained vs from_config) -- see results.",
+  "CPU kernels (ATen CPU/oneDNN) vs CUDA kernels may request different intermediates; cuBLAS/cuBLASLt workspaces exist only on GPU.",
+  "CPU cannot reproduce the GPU model-load allocation history; it is taken from the GPU trace (hybrid replay) or placed synthetically."
+ ]
+}

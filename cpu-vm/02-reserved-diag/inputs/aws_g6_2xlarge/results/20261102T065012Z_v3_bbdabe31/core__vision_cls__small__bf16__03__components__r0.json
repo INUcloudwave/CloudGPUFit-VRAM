@@ -1,0 +1,136 @@
+{
+  "case": {
+    "case_id": "core__vision_cls__small__bf16__03",
+    "suite": "core",
+    "workload_type": "vision_cls",
+    "model": "google/mobilenet_v2_1.0_224",
+    "size": "small",
+    "dtype": "bf16",
+    "params": {
+      "batch_size": 4,
+      "resolution": 224
+    }
+  },
+  "mode": "components",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.004412037999827589,
+    "model_reuse": 0.0012387579999995069,
+    "input_and_validation": 0.015233346999593778,
+    "finite_output_check": 0.008277464000457257,
+    "warmup": 0.007906064999588125,
+    "measurement": 0.008158540999829711,
+    "postprocessing": 0.0002879960002246662,
+    "complete": 2.7181000405107625e-05
+  },
+  "model_reused": true,
+  "startup_metrics_scope": "reused_resident_model",
+  "startup_peak_allocated_bytes": 15690752,
+  "startup_peak_reserved_bytes": 52428800,
+  "memory_baseline": {
+    "parameter_storage_bytes": 7012306,
+    "buffer_storage_bytes": 68640,
+    "resident_allocated_bytes": 15690752,
+    "resident_reserved_bytes": 52428800
+  },
+  "environment": {
+    "gpu": "NVIDIA L4",
+    "total_vram_bytes": 24152899584,
+    "cuda_total_vram_bytes": 23661248512,
+    "driver": "595.112.07",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "7.0.0-1016-aws",
+    "cpu_threads": 8,
+    "available_vcpus": 8,
+    "revision": "75e607b00aeae1297cc89d026a118bce012f5c5a",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "g6.2xlarge"
+  },
+  "actual_input_shapes": {
+    "pixel_values": [
+      4,
+      3,
+      224,
+      224
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "pixel_values": "4990a3c3d83cca9fd914398e4df2fbbe5809dd6f9df38330d2a1a8f78b34806c"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 7766869839719,
+      "end_ns": 7766877921989,
+      "elapsed_ms": 8.08227,
+      "actual_new_tokens_per_sample": 0
+    }
+  ],
+  "component_snapshots": [
+    {
+      "query_begin_ns": 7766877550061,
+      "nvml_process_bytes": 297795584,
+      "allocated_bytes": 16903168,
+      "reserved_bytes": 52428800,
+      "query_end_ns": 7766877860227,
+      "gpu_done_ns": 7766877862117,
+      "self_kv_storage_bytes": 0,
+      "cross_kv_storage_bytes": 0,
+      "outside_reserved_bytes": 245366784,
+      "unclassified_above_idle_bytes": 1212416
+    }
+  ],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 61,
+    "sm_clock_mhz": 2040,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 61,
+    "sm_clock_mhz": 2040,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "inference_peak_allocated_bytes": 40349696,
+  "inference_peak_reserved_bytes": 52428800,
+  "scope": "classification_forward",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": true,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 61,
+  "worker_main_seconds": 0.04554138999992574,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": {
+    "seconds": 0.0817733230005615,
+    "allocated_bytes": 15690752,
+    "reserved_bytes": 52428800,
+    "allocator_cache_retained": true
+  },
+  "between_mode_idle": {
+    "seconds": 1.0005907920003665,
+    "temperature_c": 61,
+    "utilization_percent": 0,
+    "device_used_mib": 760.875
+  },
+  "case_start_gpu_state": [
+    0.0,
+    61.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    760.875,
+    61,
+    0
+  ],
+  "worker_exit_code": 0
+}

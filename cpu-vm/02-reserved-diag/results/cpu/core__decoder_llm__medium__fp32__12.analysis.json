@@ -1,0 +1,827 @@
+{
+ "case_id": "core__decoder_llm__medium__fp32__12",
+ "capacity_gb": 80.0,
+ "capacity_unit": "GiB (x 2^30), xMem allowed_memory_maximum",
+ "xmem_verification": {
+  "commit": "1ee4bd08dda277a6248abee5b6d40e0d6067efaa",
+  "files": {
+   "perf_estimator/allocator/__init__.py": true,
+   "perf_estimator/allocator/allocator.py": true,
+   "perf_estimator/allocator/simulator.py": true,
+   "perf_estimator/allocator/_C2Python/llvm.py": true,
+   "perf_estimator/profiler/__init__.py": true,
+   "perf_estimator/profiler/memoy.py": true,
+   "perf_estimator/profiler/node.py": true,
+   "perf_estimator/config.py": true
+  },
+  "imported_from": "/work/xMem/perf_estimator/allocator/allocator.py",
+  "imported_matches_root": true,
+  "ok": true
+ },
+ "baseline": {
+  "stored_prediction": {
+   "allocated": 2980687872,
+   "reserved": 3724541952
+  },
+  "A1_time_grouped_production_equivalent": {
+   "allocated": 2980687872,
+   "reserved": 3724541952,
+   "matches_stored": true
+  },
+  "A2_sequential_xmem": {
+   "allocated": 2980687872,
+   "reserved": 3724541952
+  },
+  "A3_sequential_diag_pt26_boundary": {
+   "allocated": 2980687872,
+   "reserved": 3724541952
+  },
+  "requests": 127658,
+  "pairing": {
+   "skipped_alloc_outside_regions": 0,
+   "unmatched_frees": 0,
+   "free_size_mismatch": 0,
+   "addr_reuse_while_live": 0,
+   "live_at_end": 0
+  },
+  "order": {
+   "memory_events": 255316,
+   "ev_idx_missing": 0,
+   "ts_inversions_in_ev_idx_order": 0,
+   "duplicate_ts_events": 0,
+   "tids": [
+    1
+   ]
+  },
+  "timestamp_groups": {
+   "distinct_timestamps": 255316,
+   "multi_event_groups": 0,
+   "groups_with_alloc_and_free": 0,
+   "events_in_mixed_groups": 0
+  },
+  "requests_rounding_to_exactly_10MiB": {
+   "count": 0,
+   "sizes": {}
+  },
+  "tensor_lifetime_count_stored": 127658
+ },
+ "history": {
+  "from_config_per_step:aws_replica_local_core": {
+   "meta": {
+    "case_id": "core__decoder_llm__medium__fp32__12",
+    "sequence": "aws_replica_local_core",
+    "weights": "from_config",
+    "steps": [
+     "performance/finite_check/0",
+     "performance/warmup/0",
+     "performance/measure/0",
+     "performance/measure/1",
+     "performance/measure/2",
+     "performance/measure/3",
+     "performance/measure/4",
+     "memory/between_modes/0",
+     "memory/finite_check/0",
+     "memory/warmup/0",
+     "memory/measure/0",
+     "memory/measure/1",
+     "memory/measure/2"
+    ],
+    "input_sha256": {
+     "input_ids": "e64f48260f800ef443656726625b4c2949fd5ceb46a2f653fa5c5464b1696998",
+     "attention_mask": "917e4da8f850635ab48ff08553144a383450d5ec2bc6d568c0bc75d15f8d2f76"
+    },
+    "resident_storage_bytes": 1444458592,
+    "unfreed_requests_at_end": 0,
+    "environment": {
+     "torch": "2.6.0+cu124",
+     "transformers": "4.52.4",
+     "python": "3.11.11",
+     "threads": 4,
+     "attention": "eager",
+     "device": "cpu"
+    },
+    "gc_policy": "automatic GC disabled; gc.collect inside the between_modes window (GPU worker point) and outside profiled windows only when no traced request is live (profiler cleanup)"
+   },
+   "windows": [
+    {
+     "region": "cgf::00::performance::finite_check::0",
+     "seconds": 13.500498056411743,
+     "requests": 990,
+     "frees": 990,
+     "request_bytes": 34997684573,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": null,
+     "finite": true,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 7693430784,
+     "order": {
+      "memory_events": 1980,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::01::performance::warmup::0",
+     "seconds": 57.9765088558197,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6953504768,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::02::performance::measure::0",
+     "seconds": 59.04499435424805,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6953541632,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::03::performance::measure::1",
+     "seconds": 57.481005907058716,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6953836544,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::04::performance::measure::2",
+     "seconds": 59.63056778907776,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6577221632,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::05::performance::measure::3",
+     "seconds": 58.1928391456604,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6413422592,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::06::performance::measure::4",
+     "seconds": 55.94010615348816,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6954033152,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::07::memory::between_modes::0",
+     "seconds": 0.08550572395324707,
+     "requests": 0,
+     "frees": 0,
+     "request_bytes": 0,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": null,
+     "finite": null,
+     "gc_collected_objects": 0,
+     "max_rss_bytes": 2253897728,
+     "order": {
+      "memory_events": 0,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": []
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::08::memory::finite_check::0",
+     "seconds": 12.367402791976929,
+     "requests": 990,
+     "frees": 990,
+     "request_bytes": 34997684573,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": null,
+     "finite": true,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 8033095680,
+     "order": {
+      "memory_events": 1980,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::09::memory::warmup::0",
+     "seconds": 55.99476146697998,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6953529344,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::10::memory::measure::0",
+     "seconds": 58.39119482040405,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6953914368,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::11::memory::measure::1",
+     "seconds": 57.354353189468384,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6953738240,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    },
+    {
+     "region": "cgf::12::memory::measure::2",
+     "seconds": 57.22321629524231,
+     "requests": 127660,
+     "frees": 127660,
+     "request_bytes": 123381448625,
+     "live_requests_after_step": 0,
+     "actual_new_tokens_per_sample": 128,
+     "finite": null,
+     "gc_collected_objects": null,
+     "max_rss_bytes": 6676955136,
+     "order": {
+      "memory_events": 255320,
+      "ev_idx_missing": 0,
+      "ts_inversions_in_ev_idx_order": 0,
+      "duplicate_ts_events": 0,
+      "tids": [
+       1
+      ]
+     },
+     "pairing": {
+      "skipped_alloc_outside_regions": 0,
+      "unmatched_frees": 0,
+      "free_size_mismatch": 0,
+      "addr_reuse_while_live": 0,
+      "live_at_end": 0
+     }
+    }
+   ],
+   "generate_request_sequence_identity": [
+    {
+     "step": "performance/warmup/0",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "performance/measure/0",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "performance/measure/1",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "performance/measure/2",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "performance/measure/3",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "performance/measure/4",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "memory/warmup/0",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "memory/measure/0",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "memory/measure/1",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    },
+    {
+     "step": "memory/measure/2",
+     "requests": 127660,
+     "identical_to_first_generate": true,
+     "multiset_identical": true
+    }
+   ],
+   "first_generate_vs_production_baseline_requests": {
+    "baseline_requests": 127658,
+    "history_first_generate_requests": 127660,
+    "sequence_identical": false,
+    "only_in_history": {
+     "24576": 2
+    },
+    "only_in_baseline": {}
+   },
+   "full_history_replay": {
+    "xmem_pinned": {
+     "peak_reserved": 4796186624,
+     "peak_allocated": 4051124224,
+     "final_reserved": 4796186624,
+     "oom": null,
+     "unknown_frees": 0,
+     "live_blocks_at_end": 340,
+     "per_step": [
+      {
+       "step": "resident_synthetic/None",
+       "reserved_at_start": 0,
+       "peak_reserved": 1447034880,
+       "peak_allocated": 1444470784,
+       "reserved_at_end": 1447034880,
+       "new_segment_bytes": 1447034880,
+       "requests": 340
+      },
+      {
+       "step": "performance/finite_check/0",
+       "reserved_at_start": 1447034880,
+       "peak_reserved": 4789895168,
+       "peak_allocated": 4051124224,
+       "reserved_at_end": 4789895168,
+       "new_segment_bytes": 3342860288,
+       "requests": 990
+      },
+      {
+       "step": "performance/warmup/0",
+       "reserved_at_start": 4789895168,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 6291456,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/1",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/2",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/3",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/4",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/finite_check/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 4051124224,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 990
+      },
+      {
+       "step": "memory/warmup/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/measure/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/measure/1",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/measure/2",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      }
+     ],
+     "measured_window_peaks_by_mode": {
+      "performance": {
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_first_measure_start": 4796186624
+      },
+      "memory": {
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_first_measure_start": 4796186624
+      }
+     }
+    },
+    "diag_pt26_alloc_size_boundary": {
+     "peak_reserved": 4796186624,
+     "peak_allocated": 4051124224,
+     "final_reserved": 4796186624,
+     "oom": null,
+     "unknown_frees": 0,
+     "live_blocks_at_end": 340,
+     "per_step": [
+      {
+       "step": "resident_synthetic/None",
+       "reserved_at_start": 0,
+       "peak_reserved": 1447034880,
+       "peak_allocated": 1444470784,
+       "reserved_at_end": 1447034880,
+       "new_segment_bytes": 1447034880,
+       "requests": 340
+      },
+      {
+       "step": "performance/finite_check/0",
+       "reserved_at_start": 1447034880,
+       "peak_reserved": 4789895168,
+       "peak_allocated": 4051124224,
+       "reserved_at_end": 4789895168,
+       "new_segment_bytes": 3342860288,
+       "requests": 990
+      },
+      {
+       "step": "performance/warmup/0",
+       "reserved_at_start": 4789895168,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 6291456,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/1",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/2",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/3",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "performance/measure/4",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/finite_check/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 4051124224,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 990
+      },
+      {
+       "step": "memory/warmup/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/measure/0",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/measure/1",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      },
+      {
+       "step": "memory/measure/2",
+       "reserved_at_start": 4796186624,
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_end": 4796186624,
+       "new_segment_bytes": 0,
+       "requests": 127660
+      }
+     ],
+     "measured_window_peaks_by_mode": {
+      "performance": {
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_first_measure_start": 4796186624
+      },
+      "memory": {
+       "peak_reserved": 4796186624,
+       "peak_allocated": 2980687872,
+       "reserved_at_first_measure_start": 4796186624
+      }
+     }
+    }
+   },
+   "isolated_first_generate": {
+    "peak_reserved": 3724541952,
+    "peak_allocated": 2980687872,
+    "unknown_frees": 0
+   }
+  }
+ }
+}

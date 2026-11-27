@@ -1,0 +1,186 @@
+{
+  "case": {
+    "case_id": "core__vision_cls__medium__fp32__05",
+    "suite": "core",
+    "workload_type": "vision_cls",
+    "model": "microsoft/resnet-50",
+    "size": "medium",
+    "dtype": "fp32",
+    "params": {
+      "batch_size": 16,
+      "resolution": 224
+    }
+  },
+  "mode": "memory",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.004695466000157467,
+    "model_reuse": 0.0019514240002536098,
+    "input_and_validation": 0.025007622999510204,
+    "finite_output_check": 0.022365434000676032,
+    "warmup": 0.023380486999485584,
+    "measurement": 0.0727875499997026,
+    "postprocessing": 0.000582383000619302,
+    "complete": 2.3241000235429965e-05
+  },
+  "model_reused": true,
+  "startup_metrics_scope": "reused_resident_model",
+  "startup_memory_samples": [
+    {
+      "query_begin_ns": 7923426759202,
+      "nvml_process_bytes": 572522496,
+      "allocated_bytes": 111388160,
+      "reserved_bytes": 333447168,
+      "query_end_ns": 7923427063269
+    },
+    {
+      "query_begin_ns": 7923428399719,
+      "nvml_process_bytes": 572522496,
+      "allocated_bytes": 111388160,
+      "reserved_bytes": 333447168,
+      "query_end_ns": 7923428656354
+    }
+  ],
+  "startup_nvml_sampled_peak_bytes": 572522496,
+  "startup_sampling_errors": [],
+  "startup_peak_allocated_bytes": 111388160,
+  "startup_peak_reserved_bytes": 333447168,
+  "memory_baseline": {
+    "parameter_storage_bytes": 102228128,
+    "buffer_storage_bytes": 212904,
+    "resident_allocated_bytes": 111388160,
+    "resident_reserved_bytes": 333447168
+  },
+  "environment": {
+    "gpu": "NVIDIA L4",
+    "total_vram_bytes": 24152899584,
+    "cuda_total_vram_bytes": 23661248512,
+    "driver": "595.112.07",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "7.0.0-1016-aws",
+    "cpu_threads": 8,
+    "available_vcpus": 8,
+    "revision": "34c2154c194f829b11125337b98c8f5f9965ff19",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "g6.2xlarge"
+  },
+  "actual_input_shapes": {
+    "pixel_values": [
+      16,
+      3,
+      224,
+      224
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "pixel_values": "d58b0365532bf95d55dc66ffd6fdf5f7d0b54b6aff2e75b5ba07ca1d02c2b34c"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 7923499496541,
+      "end_ns": 7923523511772,
+      "elapsed_ms": 24.015231,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 7923523527602,
+      "end_ns": 7923547835030,
+      "elapsed_ms": 24.307428,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 7923547849850,
+      "end_ns": 7923572202329,
+      "elapsed_ms": 24.352479,
+      "actual_new_tokens_per_sample": 0
+    }
+  ],
+  "component_snapshots": [],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 55,
+    "sm_clock_mhz": 2040,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 56,
+    "sm_clock_mhz": 1455,
+    "clock_event_reasons": 4,
+    "thermal_slowdown_at_boundary": false
+  },
+  "memory_samples": [
+    {
+      "query_begin_ns": 7923498895467,
+      "nvml_process_bytes": 572522496,
+      "allocated_bytes": 111388160,
+      "reserved_bytes": 333447168,
+      "query_end_ns": 7923499267756,
+      "cached_unused_bytes": 222059008,
+      "outside_reserved_bytes": 239075328
+    },
+    {
+      "query_begin_ns": 7923549490727,
+      "nvml_process_bytes": 572522496,
+      "allocated_bytes": 211985920,
+      "reserved_bytes": 333447168,
+      "query_end_ns": 7923549871916,
+      "cached_unused_bytes": 121461248,
+      "outside_reserved_bytes": 239075328
+    },
+    {
+      "query_begin_ns": 7923572330832,
+      "nvml_process_bytes": 572522496,
+      "allocated_bytes": 111388160,
+      "reserved_bytes": 333447168,
+      "query_end_ns": 7923572612968,
+      "cached_unused_bytes": 222059008,
+      "outside_reserved_bytes": 239075328
+    }
+  ],
+  "sampling_errors": [],
+  "nvml_process_sampled_peak_bytes": 572522496,
+  "nvml_sample_coverage": 1.0,
+  "nvml_status": "ok",
+  "inference_peak_allocated_bytes": 303998464,
+  "inference_peak_reserved_bytes": 333447168,
+  "scope": "classification_forward",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": true,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 56,
+  "worker_main_seconds": 0.15079360800064023,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": {
+    "seconds": 0.08514293500047643,
+    "allocated_bytes": 111388160,
+    "reserved_bytes": 333447168,
+    "allocator_cache_retained": true
+  },
+  "between_mode_idle": {
+    "seconds": 1.0005843880007887,
+    "temperature_c": 55,
+    "utilization_percent": 0,
+    "device_used_mib": 1022.875
+  },
+  "case_start_gpu_state": [
+    0.0,
+    55.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    1022.875,
+    55,
+    0
+  ],
+  "worker_exit_code": 0
+}
