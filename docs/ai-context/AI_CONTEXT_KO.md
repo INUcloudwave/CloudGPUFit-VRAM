@@ -37,7 +37,7 @@
 
 ```
 AI_CONTEXT_KO.md                  ← 이 문서 (먼저 읽기)
-EXCLUDED_LARGE_FILES.md           ← 50MB 초과로 뺀 파일 8개 목록·sha256 (원본은 INUGPU VM에 보존)
+EXCLUDED_LARGE_FILES.md           ← 50MB 초과로 뺀 파일 8개 목록·sha256 (VM 삭제로 원본 없음)
 docs/                             ← 실험별 상세 문서 (설계·실행 명령·코드 파일별 설명·결과 수치·미확인 사항)
   01_early_and_bench.md           ← 초기 벤치(03-31), 14B OOM(09-14), cloudgpufit-bench v1~v3(10월)
   02_outside.md                   ← outside 분석 (11-03~11-10)

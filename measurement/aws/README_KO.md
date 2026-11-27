@@ -75,6 +75,6 @@
 ## 4. 레포에 넣지 않은 것
 
 - CPU 결과의 요청 목록 `invocation_fp16_requests.npz` 396개(합계 433 MB). 크기 때문에 뺐다.
-  - 원본은 INUOS `~/aws-result/aws_fp16_l256_results.tar.gz`에 있다(306 MB, sha256 `114d14404d26e594400d4a300d2e2811707b5578c71e3405473db1501afe5d2b`). AWS에서 만든 파일과 해시가 같은 것을 확인했다.
+  - 원본(CPU VM 삭제로 현재 없음): INUOS `~/aws-result/aws_fp16_l256_results.tar.gz` (306 MB, sha256 `114d14404d26e594400d4a300d2e2811707b5578c71e3405473db1501afe5d2b`). AWS에서 만든 파일과 해시가 같은 것을 확인했다.
   - 다시 재생하려면(예: CPU 버퍼 제거 실험) 이 압축 파일이 필요하다.
 - 원본 profiler trace.json은 작업자가 요청 목록을 뽑은 뒤 지우므로 처음부터 없다(INUOS도 같음).
