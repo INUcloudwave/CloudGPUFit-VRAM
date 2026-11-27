@@ -55,7 +55,7 @@
   - OOM은 3090보다 6개 많다(gpt2-medium b128 in512 2개, t5-3b 4개). T4 용량이 작기 때문이다.
 - attention 구현: sdpa 200 / eager 195 (3090과 같은 분포)
 - 파일
-  - `gpu-vm/05-fp16-vram/runs/aws-g4dn.xlarge__l256/` (원본)
+  - `measurement/local-gpu-vm/05-fp16-vram/runs/aws-g4dn.xlarge__l256/` (원본)
   - `results/gpu_g4dn.xlarge_T4_main395_L256_per_condition.csv` (조건별 1행, byte)
   - 로그: `logs/aws-g4dn.xlarge__l256/` (내부 IP는 `ip-REDACTED`로 가림)
 
@@ -66,7 +66,7 @@
 - 원인 (확인됨)
   - `cu124-v1` 안의 torch 2.6.0+cu124는 sm_50 ~ sm_90 커널만 들어 있다 (`torch._C._cuda_getArchFlags()`).
   - Blackwell(sm_120)에는 CUDA 12.8 이상, torch 2.7 이상 빌드가 필요하다.
-- 조치: `cloudgpufit-bench:cu128-v1` 제작 (`gpu-vm/05-fp16-vram/aws/Dockerfile.cu128`, `aws/IMAGE_INFO_cu128.json`)
+- 조치: `cloudgpufit-bench:cu128-v1` 제작 (`measurement/local-gpu-vm/05-fp16-vram/aws/Dockerfile.cu128`, `aws/IMAGE_INFO_cu128.json`)
   - base: `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime`, digest로 고정 (`sha256:c16f4c74…`)
   - pip로 추가한 9개 패키지(transformers 4.52.4, accelerate 1.4.0, huggingface_hub 0.36.2, tokenizers 0.21.4, safetensors 0.8.0 등)는 cu124-v1과 같은 버전으로 고정
   - 같이 바뀐 것: python 3.11.11 → 3.11.13, cuDNN 9.1.0 → 9.7.1, cuBLAS 12.4 → 12.8, numpy 2.2.2 → 2.2.6
@@ -116,7 +116,7 @@
   - 중간: 같은 필터에서 두 값의 기하평균에 가장 가까운 조건
   - 피크가 같으면 입력이 작은 조건, 그다음 실행 시간이 짧은 조건을 고른다.
   - 39개 모두 기존 측정 5회의 시간 편차 ≤ 7%, peak 5회 동일
-  - 표: `gpu-vm/05-fp16-vram/config/envcmp39_selection.md`, 조건표 `config/conditions_envcmp39.json` (원 조건 객체를 그대로 복사)
+  - 표: `measurement/local-gpu-vm/05-fp16-vram/config/envcmp39_selection.md`, 조건표 `config/conditions_envcmp39.json` (원 조건 객체를 그대로 복사)
 - 추가 측정: 래퍼 `src_env/outside_worker.py`가 세 시점에 GPU를 동기화한 뒤 torch allocated/reserved, NVML 프로세스 사용량, outside를 byte로 기록한다(`measure.outside.json`). 워커는 바꾸지 않았다.
   - 세 시점: CUDA 초기화 직후, 모델 로딩 직후, 워밍업 3회 직후(측정 1회차 시작, peak 리셋 전)
   - 래퍼가 측정값을 바꾸지 않는 것은 3090 스모크로 확인했다. 3조건 모두 기존 L256과 바이트 단위로 같았다.
@@ -126,7 +126,7 @@
   - persistence mode가 A와 다를 때
   - C인데 드라이버가 A와 다를 때, 또는 B인데 드라이버가 580이 아닐 때
   - 조건 시작 시 다른 GPU 프로세스가 있을 때
-- 가이드: `gpu-vm/05-fp16-vram/envcmp/GUIDE_ENVCMP_KO.md` (실제로 보낸 판은 `GUIDE_ENVCMP_KO_as_shipped.md`)
+- 가이드: `measurement/local-gpu-vm/05-fp16-vram/envcmp/GUIDE_ENVCMP_KO.md` (실제로 보낸 판은 `GUIDE_ENVCMP_KO_as_shipped.md`)
 
 ### 5.2 결과 (`results/envcmp_g4dn_ACB_REF/envcmp_summary.md`, 조건별 `envcmp_wide.csv`)
 
@@ -228,7 +228,7 @@
 - 미확인: tinyllama +204 MiB (E10), qwen +928 MiB (T4), opt만 로딩 직후 outside가 늘지 않는 이유
 - g7 결과는 아직 받지 못했다.
 
-## 9. 파일 위치 (레포 `gpu-vm/05-fp16-vram/` 기준)
+## 9. 파일 위치 (레포 `measurement/local-gpu-vm/05-fp16-vram/` 기준)
 
 | 내용 | 경로 |
 |---|---|

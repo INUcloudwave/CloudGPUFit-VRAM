@@ -5,7 +5,7 @@
   - 생산 측정·예측 코드와 과거 결과는 덮어쓰지 않는다.
   - 바꿀 때는 새 파일·복사본·래퍼를 만들고, 원본은 `*.v<날짜>` 또는 `*.before-*`로 보존한다.
   - 실패 조건을 몰래 다른 배치나 dtype으로 바꾸지 않는다.
-- 표기: sha는 sha256 앞 8자리. 파일 경로는 레포 기준(`gpu-vm/…`, `cpu-vm/…`)
+- 표기: sha는 sha256 앞 8자리. 파일 경로는 레포 기준(`measurement/local-gpu-vm/…`, `prediction/local-cpu-vm/…`)
 
 ---
 
@@ -13,10 +13,10 @@
 
 | 단계 | 기간 | 측정 코드 | 무엇이 문제였고 왜 바꿨나 | 문서 |
 |---|---|---|---|---|
-| ① 벤치 하네스 | 10-06 ~ 10-27 | `gpu-vm/01-cloudgpufit-bench/` v1 → v3 | 342조건 × 5모드(performance/memory/…)를 한 프로세스에서 이어서 실행. v1이 17.8시간 걸려서 v3(모델 공유 + 격리 + 반복 축소)로 줄임 (3.7시간) | `docs/01` |
-| ② outside 연구 | 11-03 ~ 11-10 | `gpu-vm/02-outside-analysis/outside-lab/` (`probe.py`, `container_run.py`) | 예측 VRAM = reserved + outside 중 outside를 따로 정의하고 측정. probe에 GPU UUID 정규화를 추가했고, 이전판은 `probe.py.before-uuid-fix`로 보존 | `docs/02` |
-| ③ reserved 오차 원인 분리 | 11-10 ~ 11-11 | `gpu-vm/04-reserved-diag/collector/` (INUOS 요청서 기반 수집기, 변경점 `COLLECTOR_CHANGES.md`) | CPU 예측(342)과 AWS L4 실측의 reserved 차이가 큼. 원인은 **실행 이력**이었다. 이전 측정은 같은 프로세스에서 검증 forward·performance 모드를 거친 뒤 memory를 잼 → 캐시가 이미 커져 있었음 | `docs/03`, `cpu-vm/docs/02` |
-| ④ **VRAM 전용 측정 재설계** | 11-11 ~ | `gpu-vm/05-fp16-vram/src/vram_worker.py` + `src/run_conditions.py` | ③의 결론으로 "조건마다 새 컨테이너, 로드 → warmup 3 → measure 5, 검증 forward 없음, 캐시 유지"로 재설계. 이후 모든 GPU 정답값의 기준 | `docs/04` |
+| ① 벤치 하네스 | 10-06 ~ 10-27 | `measurement/local-gpu-vm/01-cloudgpufit-bench/` v1 → v3 | 342조건 × 5모드(performance/memory/…)를 한 프로세스에서 이어서 실행. v1이 17.8시간 걸려서 v3(모델 공유 + 격리 + 반복 축소)로 줄임 (3.7시간) | `docs/01` |
+| ② outside 연구 | 11-03 ~ 11-10 | `measurement/local-gpu-vm/02-outside-analysis/outside-lab/` (`probe.py`, `container_run.py`) | 예측 VRAM = reserved + outside 중 outside를 따로 정의하고 측정. probe에 GPU UUID 정규화를 추가했고, 이전판은 `probe.py.before-uuid-fix`로 보존 | `docs/02` |
+| ③ reserved 오차 원인 분리 | 11-10 ~ 11-11 | `measurement/local-gpu-vm/04-reserved-diag/collector/` (INUOS 요청서 기반 수집기, 변경점 `COLLECTOR_CHANGES.md`) | CPU 예측(342)과 AWS L4 실측의 reserved 차이가 큼. 원인은 **실행 이력**이었다. 이전 측정은 같은 프로세스에서 검증 forward·performance 모드를 거친 뒤 memory를 잼 → 캐시가 이미 커져 있었음 | `docs/03`, `prediction/local-cpu-vm/docs/02` |
+| ④ **VRAM 전용 측정 재설계** | 11-11 ~ | `measurement/local-gpu-vm/05-fp16-vram/src/vram_worker.py` + `src/run_conditions.py` | ③의 결론으로 "조건마다 새 컨테이너, 로드 → warmup 3 → measure 5, 검증 forward 없음, 캐시 유지"로 재설계. 이후 모든 GPU 정답값의 기준 | `docs/04` |
 | ⑤ attention 기본값 전환 | 11-11 | 워커에 `--attn` 추가 (`1e86ee7e` → `d06f0f15`) | v1은 eager 고정. 실제 사용 환경(transformers 기본 = sdpa)과 달라서 파일럿 v2부터 기본값 사용. Qwen FP16 eager는 출력 NaN이라는 문제도 발견 | `docs/04` §2.2 ~ 2.3 |
 | ⑥ 조건표 L1024 → L256 | 11-15 | 조건표 생성기 `generate_main_l256.py` | 1024 조건이 너무 오래 걸려서 사용자가 256으로 변경 결정 | `docs/04` §2.10 |
 | ⑦ 분석용 래퍼 (측정 코드는 그대로) | 11-16 ~ 11-17 | `src_cap/cap_worker.py`, `src_env/outside_worker.py` + 러너 복사본 | R_min 실측(메모리 상한)과 세 시점 outside 기록이 필요. 워커를 고치지 않으려고 래퍼로 감쌈 | `docs/05`, `docs/06` |
@@ -24,7 +24,7 @@
 
 ---
 
-## 2. GPU 측정 워커 `gpu-vm/05-fp16-vram/src/vram_worker.py`
+## 2. GPU 측정 워커 `measurement/local-gpu-vm/05-fp16-vram/src/vram_worker.py`
 
 | sha | 날짜 | 변경 | 이유 | 사용한 실행 |
 |---|---|---|---|---|
@@ -61,7 +61,7 @@
 | `tools/xmem_replay.py` | 11-11 | GPU trace를 xMem에 그대로 재생 → 구간별 reserved 비교 (파일럿 12개 완전 일치) |
 | `tools/reserved_anatomy.py` | 11-16 | 세그먼트를 만든 요청을 config 크기 공식으로 분류 (KV, logits, MLP 등) |
 | `tools/xmem_replay_variants.py` | 11-16 | 한 가지만 바꾼 재생 (해제 시점, 작업공간 제거, warmup_0만, prefill 최대 요청 제거) |
-| `gpu-vm/03-xmem-probes/reserved-anatomy-20261116/first_divergence.py` | 11-16 | xMem과 GPU가 처음 어긋나는 이벤트 찾기 |
+| `measurement/local-gpu-vm/03-xmem-probes/reserved-anatomy-20261116/first_divergence.py` | 11-16 | xMem과 GPU가 처음 어긋나는 이벤트 찾기 |
 | 〃 `replay_gpu_addresses.py` | 11-16 | xMem 세그먼트 주소에 GPU 실제 주소를 넣어 재생 → 바이트 일치 (주소 순서가 원인임을 확인) |
 | 〃 `replay_addr_policy.py` | 11-16 | 주소 규칙(내림차순 등)으로 재생. **xMem 저장소 파일은 고치지 않고** 재생 스크립트 안에서 세그먼트 주소 함수를 바꿔 끼움 |
 | 〃 `capacity_sweep.py` → `capacity_sweep_desc.py` | 11-16 | R_inf / R_min 계산. `_desc`는 원본 복사본에 내림차순 규칙을 넣은 것 |
@@ -70,7 +70,7 @@
 | `tools/compare_gpu_runs.py` | 11-18 | 조건별 CSV 두 개 비교(버전·GPU 효과), outside 분포 |
 | `envcmp/check_envcmp.py` | 11-18 | 환경 비교가 계획대로 끝났는지 점검 (드라이버·torch·이미지·커널·세 시점 기록·동시 실행) |
 
-- xMem: 기준 커밋과 로컬 수정은 `gpu-vm/03-xmem-probes/xMem-local-changes/` (`BASE_COMMIT.txt`, `local_modifications.patch`)
+- xMem: 기준 커밋과 로컬 수정은 `measurement/local-gpu-vm/03-xmem-probes/xMem-local-changes/` (`BASE_COMMIT.txt`, `local_modifications.patch`)
   - 로컬 수정은 `exp/trainer/*`, `perf_estimator/estimator.py`이고 할당기 파일은 아니다.
   - INUOS는 xMem `1ee4bd08`을 수정 없이 쓴다.
 
@@ -82,7 +82,7 @@
 | `cloudgpufit-bench:cu128-v1` | `798b909f` / `f7efefc8` | 11-17 | base `pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime` (digest `c16f4c74…`) + pip 9개를 cu124-v1과 같은 버전으로 고정. torch 2.7.1, CUDA 12.8, cuDNN 9.7.1, python 3.11.13 | Blackwell(sm_120) 지원. cu124-v1은 sm_90까지만 | g7, 3090 cu128 |
 | `cloudgpufit-bench:pt251-cu124-v1` | `0b22fba1` / `f47e2cce` | 11-17 | **cu124-v1 위에 pip 레이어 1개**: torch 2.5.1, torchvision 0.20.1, torchaudio 2.5.1, triton 3.1.0. 나머지 동일 (`/opt/pt251_pip_changes.txt`) | PyTorch 배포판만 바꾼 비교 | envcmp C |
 
-- 정의 파일: `gpu-vm/05-fp16-vram/aws/IMAGE_INFO.json`, `IMAGE_INFO_cu128.json`, `IMAGES_INFO_envcmp.json`, `Dockerfile.cu128`, `Dockerfile.pt251`
+- 정의 파일: `measurement/local-gpu-vm/05-fp16-vram/aws/IMAGE_INFO.json`, `IMAGE_INFO_cu128.json`, `IMAGES_INFO_envcmp.json`, `Dockerfile.cu128`, `Dockerfile.pt251`
 - `docker save` 결과는 결정적이다(두 번 저장해 sha256 동일 확인). 번들 안 이미지는 sha256로 검증한 뒤 로드한다.
 
 ## 6. AWS 실행 패키지와 스크립트
@@ -112,7 +112,7 @@
 | `config/conditions_envcmp39.json` | `3420a89f` | 39 | envcmp. L256 조건 객체를 그대로 복사 (선택 기준표 `envcmp39_selection.*`) |
 | `config/models.json` | — | 13모델 | revision 고정. `.bin` 가중치: opt-125m, vit-large (`use_safetensors=false`) |
 
-## 8. INUOS(CPU 예측) 코드 요약 — 상세는 `cpu-vm/INUOS_CONTEXT_KO.md` §7, `cpu-vm/docs/03`
+## 8. INUOS(CPU 예측) 코드 요약 — 상세는 `prediction/local-cpu-vm/INUOS_CONTEXT_KO.md` §7, `prediction/local-cpu-vm/docs/03`
 
 | 단계 | 코드 | 변경 이유 |
 |---|---|---|

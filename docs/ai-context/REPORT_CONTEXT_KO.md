@@ -9,8 +9,8 @@
   1. §0 최종 결론, 그다음 이 문서 전체
   2. 필요한 부분의 상세 문서
      - `AI_CONTEXT_KO.md`: INUGPU 쪽 GPU 측정, 11-17까지
-     - `cpu-vm/INUOS_CONTEXT_KO.md`: INUOS 쪽 CPU 예측
-     - `aws/README_KO.md`: AWS 실행과 결과
+     - `prediction/local-cpu-vm/INUOS_CONTEXT_KO.md`: INUOS 쪽 CPU 예측
+     - `measurement/aws/README_KO.md`: AWS 실행과 결과
 - 표기
   - **확인됨**: 코드, 로그, 결과 파일로 확인한 사실
   - **추정**: 근거는 있으나 직접 검증하지 않은 해석
@@ -90,10 +90,10 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
 
 | 이름 | 하드웨어 | 역할 | 소프트웨어 | 브랜치 위치 |
 |---|---|---|---|---|
-| **INUGPU** | RTX 3090 24 GB VM, driver 570.211.01 | GPU 실측(정답값). AWS GPU 실행 패키지 제작 | 이미지 `cloudgpufit-bench:cu124-v1` (torch 2.6.0+cu124, cuDNN 9.1.0, transformers 4.52.4). Blackwell용 `cu128-v1` (torch 2.7.1+cu128, cuDNN 9.7.1) | `gpu-vm/` |
-| **INUOS** | CPU 전용 VM, Xeon Cascade Lake 24 vCPU, RAM 47 GiB, FP16 명령 없음 | CPU 실행, 요청 기록, xMem 재생, 예측, 분석 | 이미지 `cloudgpufit-cpu-validation:20261108` (ID `sha256:875290b5…`, torch 2.6.0+cu124 CPU 실행, transformers 4.52.4) | `cpu-vm/` |
-| **AWS GPU** | g4dn T4, g5 A10G, g6 L4, gr6 L4(반복), g6e L40S, g7 RTX PRO 4500 Blackwell. driver 모두 595.112.07 | INUGPU와 같은 측정을 다른 GPU에서 실행(사용자가 직접 실행) | g4dn~g6e는 cu124-v1, g7은 cu128-v1 (cu124에 sm_120 커널이 없어 파일럿 26개 전부 실패) | `aws/gpu_measurements/` |
-| **AWS CPU** | r7i.8xlarge, Sapphire Rapids 32 vCPU, 247 GiB (FP16 명령 있음). 새 LLM 48개는 r7i 16 vCPU·124 GiB (11-23) | INUOS와 같은 CPU 예측을 **실제 FP16 실행**으로 다시 함 | INUOS와 같은 이미지(ID 동일) | `aws/cpu_fp16_real_r7i/` |
+| **INUGPU** | RTX 3090 24 GB VM, driver 570.211.01 | GPU 실측(정답값). AWS GPU 실행 패키지 제작 | 이미지 `cloudgpufit-bench:cu124-v1` (torch 2.6.0+cu124, cuDNN 9.1.0, transformers 4.52.4). Blackwell용 `cu128-v1` (torch 2.7.1+cu128, cuDNN 9.7.1) | `measurement/local-gpu-vm/` |
+| **INUOS** | CPU 전용 VM, Xeon Cascade Lake 24 vCPU, RAM 47 GiB, FP16 명령 없음 | CPU 실행, 요청 기록, xMem 재생, 예측, 분석 | 이미지 `cloudgpufit-cpu-validation:20261108` (ID `sha256:875290b5…`, torch 2.6.0+cu124 CPU 실행, transformers 4.52.4) | `prediction/local-cpu-vm/` |
+| **AWS GPU** | g4dn T4, g5 A10G, g6 L4, gr6 L4(반복), g6e L40S, g7 RTX PRO 4500 Blackwell. driver 모두 595.112.07 | INUGPU와 같은 측정을 다른 GPU에서 실행(사용자가 직접 실행) | g4dn~g6e는 cu124-v1, g7은 cu128-v1 (cu124에 sm_120 커널이 없어 파일럿 26개 전부 실패) | `measurement/aws/` |
+| **AWS CPU** | r7i.8xlarge, Sapphire Rapids 32 vCPU, 247 GiB (FP16 명령 있음). 새 LLM 48개는 r7i 16 vCPU·124 GiB (11-23) | INUOS와 같은 CPU 예측을 **실제 FP16 실행**으로 다시 함 | INUOS와 같은 이미지(ID 동일) | `prediction/aws-r7i-cpu/` |
 
 - VM 간 연결
   - INUOS → INUGPU: 읽기 전용 ssh. 보고 가져오기만 하고, GPU 작업은 사용자 허락 없이 돌리지 않는다.
@@ -103,7 +103,7 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
 
 ## 3. GPU 측정 방식 (정답값의 정의, 측정 프로토콜 v2)
 
-- 코드: `gpu-vm/05-fp16-vram/src/vram_worker.py` (sha256 `d06f0f15…`). 상세는 `AI_CONTEXT_KO.md` §5.
+- 코드: `measurement/local-gpu-vm/05-fp16-vram/src/vram_worker.py` (sha256 `d06f0f15…`). 상세는 `AI_CONTEXT_KO.md` §5.
 - 조건 1개 = 새 Docker 컨테이너 1개다(캐시 이력 없음).
 - 절차
   1. FP16 모델 로드. attention은 transformers 기본값이다(OPT·Llama·Qwen·GPT-2·ViT는 sdpa, T5·CNN은 eager).
@@ -151,7 +151,7 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
   - 조건별 정보: CPU 실행 결과 전부
   - GPU 종류별 고정값: GPU 이름 → 세대 → cuBLAS 작업 공간 크기(계산), cuda_total_memory, outside
     - 실효 용량 = cuda_total − outside. GPU 종류마다 한 번 재 두는 표다.
-  - 조건별 GPU 실측은 예측에 쓰지 않는다. 출처: `cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_inputs_KO.md`
+  - 조건별 GPU 실측은 예측에 쓰지 않는다. 출처: `prediction/local-cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_inputs_KO.md`
 
 ## 6. 이름이 헷갈리는 버전들 (반드시 구분)
 
@@ -167,7 +167,7 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
 
 ## 7. 시간순 실험 이력 (왜 → 어떻게 → 결과 → 반영)
 
-### 7.1 이전 단계 (03~11-10) — 요약만. 상세는 `AI_CONTEXT_KO.md` §4.0~4.2, `cpu-vm/INUOS_CONTEXT_KO.md` §2~3
+### 7.1 이전 단계 (03~11-10) — 요약만. 상세는 `AI_CONTEXT_KO.md` §4.0~4.2, `prediction/local-cpu-vm/INUOS_CONTEXT_KO.md` §2~3
 
 | 시기 | 곳 | 실험 | 결과와 반영 |
 |---|---|---|---|
@@ -213,7 +213,7 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
    - reserved 큰 오차는 용량 1 TiB(캐시 반환 미재현), 주소 순서, cuBLAS 작업 공간 누락에서 나왔다.
    - CNN은 allocated부터 틀렸다.
 
-### 7.3 reserved 예측 v3 (11-16, INUOS) — 상세 `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/PROCESS_KO.md`
+### 7.3 reserved 예측 v3 (11-16, INUOS) — 상세 `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/PROCESS_KO.md`
 
 - 왜: GPU `first_measure_peak_reserved`를 CPU 정보만으로 맞히려고. 출발점은 INUGPU의 reserved 분석(E1~E7)과 가이드 `RESERVED_PREDICTION_GUIDE_KO.md`다.
 - 어떻게
@@ -300,13 +300,13 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
 - 결과
   - **395/395 ok**: INUOS에서 메모리 부족이던 9개도 성공했다. P 단계에서 메모리 부족이던 t5-3b 3개는 S 단계에서 성공했다.
   - 10.2시간 걸렸다.
-  - v3 재생까지 끝났다(`aws/cpu_fp16_real_r7i/results/reserved_v3/aws_fp16_l256/predictions.jsonl`).
+  - v3 재생까지 끝났다(`prediction/aws-r7i-cpu/results/reserved_v3/aws_fp16_l256/predictions.jsonl`).
 - INUOS 방식과 비교 (§8.4)
   - LLM은 거의 같다.
   - T5는 AWS가 약간 나쁘다(원인 미확인).
   - CNN은 CPU FP16 oneDNN 버퍼가 커서 더 크게 과대예측한다.
 
-### 7.7 AWS GPU 5종 실측과 간접 검증 (측정 11-16~17 사용자, 분석 11-18 INUOS) — 상세 `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/aws_gpu_check/README_KO.md`
+### 7.7 AWS GPU 5종 실측과 간접 검증 (측정 11-16~17 사용자, 분석 11-18 INUOS) — 상세 `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/aws_gpu_check/README_KO.md`
 
 - 왜: 3090에서만 확인한 규칙(내림차순 주소, cuBLAS 크기, outside)이 다른 GPU에서도 성립하는지 보려고
 - 어떻게
@@ -460,7 +460,7 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
   - 바꾼 방식: xMem 파일은 그대로 두고, 재생할 때 인스턴스 단위로 주소 정책을 바꾸고, 요청을 추가하고, 용량을 인자로 준다(`replay3.py`).
 - **GPU 측정 작업자** `vram_worker.py` (INUGPU, sha256 `d06f0f15…`): 정답 코드다. CPU 쪽이 이 절차를 따라간다.
 
-### 9.2 INUOS 코드의 변화 (`cpu-vm/03-fp16-cpu-prediction/`, 브랜치 `exp/fp16-680-cpu-20261111`)
+### 9.2 INUOS 코드의 변화 (`prediction/local-cpu-vm/03-fp16-cpu-prediction/`, 브랜치 `exp/fp16-680-cpu-20261111`)
 
 | 단계 | 파일 | 원래 → 바뀐 것 | 이유 | 커밋 |
 |---|---|---|---|---|
@@ -519,25 +519,25 @@ CPU에서 모델을 실제로 실행해 PyTorch 할당 요청 목록을 기록�
 
 | 찾는 것 | 위치 |
 |---|---|
-| 3090 GPU 조건별 실측 | `gpu-vm/05-fp16-vram/results/gpu_rtx3090_main395_L256_per_condition.csv` (L1024도 같은 폴더) |
-| AWS GPU 조건별 실측 | `aws/gpu_measurements/<instance>/runs/<label>/<condition_id>/measure.json`, 요약 `logs/main395_*_summary.md` |
-| INUOS CPU 결과 | `cpu-vm/03-fp16-cpu-prediction/runs/main395_l256/cases/<id>/result.json` |
-| AWS CPU 결과 | `aws/cpu_fp16_real_r7i/runs/aws_fp16_l256/cases/<id>/result.json` (요청 목록 npz는 제외) |
-| v3 예측 (INUOS) | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/rtx3090_v3/predictions.jsonl` |
-| v3 예측 (AWS CPU) | `aws/cpu_fp16_real_r7i/results/reserved_v3/aws_fp16_l256/predictions.jsonl` |
-| 3090 비교 보고서 | `cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_report.md`, `_per_condition.csv` |
-| AWS GPU 비교 | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/aws_gpu_check/` (`per_condition.csv`, `summary.json`, `aws_vs_inuos_rinf.txt`) |
-| GPU별 상수 | `cpu-vm/03-fp16-cpu-prediction/manifest/gpu_profiles.json`, `src/cgf680/gpu_rules.py` |
-| 예측 입력 출처 | `cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_inputs_KO.md` |
-| 실험 과정 | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/PROCESS_KO.md` |
-| 이미지 재현 | `cpu-vm/03-fp16-cpu-prediction/docs/image/IMAGE_KO.md` |
-| 합성곱 오차 줄이기·3090 cuDNN 표 | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/cudnn_fit/README_KO.md`, `gpu_probe/` |
-| 처음 보는 모델 6개 (+ AWS 실제 FP16) | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/newmodels_eval/` |
-| 대체 계획 GPU 검증 | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/fallback/` |
-| cuDNN 버전 영향, deviceless | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/cudnn_version/`, `gpu_probe/deviceless/` |
-| HF 합성곱 층 목록 | `cpu-vm/03-fp16-cpu-prediction/results/conv_catalog/` |
-| qwen 원인 | `cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/confirm/trace_confirm_20261120/README_KO.md` |
-| 레포에 없는 큰 파일 | `EXCLUDED_LARGE_FILES.md`, `cpu-vm/EXCLUDED_LARGE_FILES.md`, `aws/README_KO.md` §4 |
+| 3090 GPU 조건별 실측 | `measurement/local-gpu-vm/05-fp16-vram/results/gpu_rtx3090_main395_L256_per_condition.csv` (L1024도 같은 폴더) |
+| AWS GPU 조건별 실측 | `measurement/aws/<instance>/runs/<label>/<condition_id>/measure.json`, 요약 `logs/main395_*_summary.md` |
+| INUOS CPU 결과 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/runs/main395_l256/cases/<id>/result.json` |
+| AWS CPU 결과 | `prediction/aws-r7i-cpu/runs/aws_fp16_l256/cases/<id>/result.json` (요청 목록 npz는 제외) |
+| v3 예측 (INUOS) | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/rtx3090_v3/predictions.jsonl` |
+| v3 예측 (AWS CPU) | `prediction/aws-r7i-cpu/results/reserved_v3/aws_fp16_l256/predictions.jsonl` |
+| 3090 비교 보고서 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_report.md`, `_per_condition.csv` |
+| AWS GPU 비교 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/aws_gpu_check/` (`per_condition.csv`, `summary.json`, `aws_vs_inuos_rinf.txt`) |
+| GPU별 상수 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/manifest/gpu_profiles.json`, `src/cgf680/gpu_rules.py` |
+| 예측 입력 출처 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_inputs_KO.md` |
+| 실험 과정 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/PROCESS_KO.md` |
+| 이미지 재현 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/docs/image/IMAGE_KO.md` |
+| 합성곱 오차 줄이기·3090 cuDNN 표 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/cudnn_fit/README_KO.md`, `gpu_probe/` |
+| 처음 보는 모델 6개 (+ AWS 실제 FP16) | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/newmodels_eval/` |
+| 대체 계획 GPU 검증 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/fallback/` |
+| cuDNN 버전 영향, deviceless | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/cudnn_version/`, `gpu_probe/deviceless/` |
+| HF 합성곱 층 목록 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/conv_catalog/` |
+| qwen 원인 | `prediction/local-cpu-vm/03-fp16-cpu-prediction/results/reserved_v3/confirm/trace_confirm_20261120/README_KO.md` |
+| 레포에 없는 큰 파일 | `EXCLUDED_LARGE_FILES.md`, `prediction/local-cpu-vm/EXCLUDED_LARGE_FILES.md`, `measurement/aws/README_KO.md` §4 |
 
 ## 14. 용어
 

@@ -1,6 +1,6 @@
 # 03. xMem 검증 프로브 · reserved 오차 원인 분리용 GPU trace 수집 (INUGPU)
 
-> 레포 경로 대응: VM `xmem-work/` → 레포 `gpu-vm/03-xmem-probes/` (xMem 원본 저장소 제외, 로컬 수정분은 `xMem-local-changes/`), `cgf-reserved-diag-20261110/` → `gpu-vm/04-reserved-diag/`. 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
+> 레포 경로 대응: VM `xmem-work/` → 레포 `measurement/local-gpu-vm/03-xmem-probes/` (xMem 원본 저장소 제외, 로컬 수정분은 `xMem-local-changes/`), `cgf-reserved-diag-20261110/` → `measurement/local-gpu-vm/04-reserved-diag/`. 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
 
 
 - 작성 기준: 2026-11-15, 파일에서 확인된 내용만 기록 (해석·추정은 "미확인"으로 표시)

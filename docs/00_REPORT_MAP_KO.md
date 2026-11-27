@@ -2,7 +2,7 @@
 
 > **보고서를 쓰는 AI는 이 문서를 가장 먼저 읽는다.**
 > 이 문서만으로 "무엇을, 왜, 어떻게 했고, 결과가 어땠고, 그래서 무엇을 반영했는지"를 알 수 있게 썼다.
-> 수치의 근거 파일은 각 줄의 경로나 상세 문서(`docs/01~07`, `cpu-vm/docs/01~03`)에 있다.
+> 수치의 근거 파일은 각 줄의 경로나 상세 문서(`docs/01~07`, `prediction/local-cpu-vm/docs/01~03`)에 있다.
 
 - 표기
   - "확인됨": 결과 파일로 확인한 사실
@@ -20,12 +20,12 @@
 
 | 주체 | 하드웨어 | 역할 | 레포 경로 | 맥락 문서 |
 |---|---|---|---|---|
-| INUGPU | RTX 3090 24GB VM | GPU 실측(정답값), 측정 코드·AWS 패키지 제작, reserved 원인 분석 | `gpu-vm/` | `docs/ai-context/AI_CONTEXT_KO.md` |
-| INUOS | CPU 전용 VM (Xeon 24 vCPU, 47 GiB) | CPU에서 같은 조건을 실행 → 요청 목록 기록 → xMem 재생으로 GPU VRAM 예측 | `cpu-vm/` | `cpu-vm/INUOS_CONTEXT_KO.md` |
-| AWS | g4dn(T4), g5(A10G), g6(L4), g6e(L40S), g7(Blackwell) 등 | 같은 패키지로 다른 GPU 정답값. 사용자가 직접 실행하고 INUGPU가 패키지를 만들고 분석 | 결과는 `gpu-vm/` 아래 | `docs/02`, `docs/06` |
+| INUGPU | RTX 3090 24GB VM | GPU 실측(정답값), 측정 코드·AWS 패키지 제작, reserved 원인 분석 | `measurement/local-gpu-vm/` | `docs/ai-context/AI_CONTEXT_KO.md` |
+| INUOS | CPU 전용 VM (Xeon 24 vCPU, 47 GiB) | CPU에서 같은 조건을 실행 → 요청 목록 기록 → xMem 재생으로 GPU VRAM 예측 | `prediction/local-cpu-vm/` | `prediction/local-cpu-vm/INUOS_CONTEXT_KO.md` |
+| AWS | g4dn(T4), g5(A10G), g6(L4), g6e(L40S), g7(Blackwell) 등 | 같은 패키지로 다른 GPU 정답값. 사용자가 직접 실행하고 INUGPU가 패키지를 만들고 분석 | 결과는 `measurement/local-gpu-vm/` 아래 | `docs/02`, `docs/06` |
 
 - 두 VM의 에이전트는 서로 대화하지 못한다.
-  - 문서·trace는 INUGPU → INUOS 방향 scp와 handoff 폴더로만 전달했다(`gpu-vm/05-fp16-vram/handoff_inuos/`).
+  - 문서·trace는 INUGPU → INUOS 방향 scp와 handoff 폴더로만 전달했다(`measurement/local-gpu-vm/05-fp16-vram/handoff_inuos/`).
   - 반대 방향 키는 사용자가 의도적으로 열지 않았다.
 
 ## 2. 전체 시간순 이력 (주체 · 실험 · 왜 · 결과 · 반영)
@@ -35,11 +35,11 @@
 | 03-31 ~ 09-14 | INUGPU | 초기 벤치 (ResNet/YOLO), Qwen 14B 적재 | 초기 탐색 (CloudSim 입력값) | 14B FP16은 24 GB에 strict로 안 들어감 | — | `docs/01` |
 | 08-16 ~ 08-23 | INUGPU | xMem 단독 검증 프로브 | xMem 신뢰성 | 결과 대부분 stdout만 남음 | — | `docs/03` |
 | 10-06 ~ 10-27 | INUGPU | cloudgpufit-bench 342조건 × 5모드 (v1 → v3) | GPU 정답값 1차 | v1 17.8h → v3 3.7h. memory peak 342 중 326 일치 | 이후 측정 재설계의 출발점 | `docs/01` |
-| 10-26 ~ 11-10 | INUOS | CPU 예측기 v2 휴리스틱 → native v3 → singlepass v4 (342조건) | CPU 예측 | v4: 325 ok / 17 실패 | 휴리스틱 폐기, trace + xMem 방식 확정 | `cpu-vm/docs/01` |
+| 10-26 ~ 11-10 | INUOS | CPU 예측기 v2 휴리스틱 → native v3 → singlepass v4 (342조건) | CPU 예측 | v4: 325 ok / 17 실패 | 휴리스틱 폐기, trace + xMem 방식 확정 | `prediction/local-cpu-vm/docs/01` |
 | 11-03 ~ 11-10 | INUGPU + AWS | **outside 연구** | 예측식의 outside 정의·측정 | 3090 첫 추론 후 312 MiB 고정(254 → 296 → 312). EAGER면 +728 MiB. AWS: T4 130, A10G 308, L4 232, L40S 510 | outside = GPU별 상수, LAZY 고정 | `docs/02` |
-| 11-10 ~ 11-11 | INUOS 요청 → INUGPU 수집 | **reserved 오차 원인 분리** | 342 CPU 예측 vs AWS L4 reserved 오차가 큼 | 원인은 실행 이력(검증 forward·performance 모드가 캐시를 키움). 할당기 정책은 원인 아님 | **측정 재설계**: 조건마다 새 컨테이너, 로드 → warmup 3 → measure 5 | `docs/03`, `cpu-vm/docs/02` |
+| 11-10 ~ 11-11 | INUOS 요청 → INUGPU 수집 | **reserved 오차 원인 분리** | 342 CPU 예측 vs AWS L4 reserved 오차가 큼 | 원인은 실행 이력(검증 forward·performance 모드가 캐시를 키움). 할당기 정책은 원인 아님 | **측정 재설계**: 조건마다 새 컨테이너, 로드 → warmup 3 → measure 5 | `docs/03`, `prediction/local-cpu-vm/docs/02` |
 | 11-11 | INUGPU | FP16 VRAM 파일럿 v1(eager) / v2(기본 attention), xMem 재생 | 새 측정 방식 검증 | 기본 attention = sdpa(Flash). peak는 warmup에서 확정. GPU trace를 xMem에 넣으면 완전 일치 | v2(기본 attention) 확정. "차이는 요청 목록에서 찾는다" | `docs/04` |
-| 11-11 ~ 11-15 | INUOS | FP16 CPU 프로토콜 v1 → v2 (GPU 절차 정렬), main395 L1024 | GPU와 같은 절차로 예측 | 입력 sha 375/375, 로딩 직후 reserved 374/374 일치. allocated −0.1 ~ −1.5% | CPU worker v2 확정 | `cpu-vm/docs/03` |
+| 11-11 ~ 11-15 | INUOS | FP16 CPU 프로토콜 v1 → v2 (GPU 절차 정렬), main395 L1024 | GPU와 같은 절차로 예측 | 입력 sha 375/375, 로딩 직후 reserved 374/374 일치. allocated −0.1 ~ −1.5% | CPU worker v2 확정 | `prediction/local-cpu-vm/docs/03` |
 | 11-12 | INUGPU | 본실험 395 L1024 (3090) | 정답값 | 381 ok / 14 OOM | — | `docs/04` §2.9 |
 | 11-15 ~ 11-16 | INUGPU / INUOS | 본실험 395 **L256** (3090 실측 / CPU 예측) | 1024가 너무 오래 걸려 256으로 변경 (사용자 결정) | GPU 384 ok / 11 OOM. CPU 386 ok / 9 cpu_oom | 이후 기준 조건표 | `docs/04` §2.10, `inuos` §4.1 |
 | 11-16 | AWS (사용자) | **g4dn.xlarge(T4) L256 395** | 다른 GPU 정답값 | 378 ok / 17 OOM | T4 기준값 | `docs/06` §2 |
@@ -104,7 +104,7 @@
 | 우선 | 항목 | 주체 | 상태 |
 |---|---|---|---|
 | 높음 | g7(Blackwell) 결과 수신·분석 (3090 cu128과 비교해 GPU 효과, Blackwell outside) | 사용자 → INUGPU | AWS 측정 완료, tar 미수신 |
-| 높음 | INUOS GPU trace 5건 요청 (`cpu-vm/03-fp16-cpu-prediction/handoff_codex/INUGPU_TRACE_REQUEST_20261116_KO.md`: qwen 3, resnet-50, mobilenet) | INUGPU | **미실행** |
+| 높음 | INUOS GPU trace 5건 요청 (`prediction/local-cpu-vm/03-fp16-cpu-prediction/handoff_codex/INUGPU_TRACE_REQUEST_20261116_KO.md`: qwen 3, resnet-50, mobilenet) | INUGPU | **미실행** |
 | 높음 | T4 GPU trace 몇 건 (T4는 메모리 효율 attention → 요청 목록이 3090과 같은지, qwen +928 MiB 원인) | AWS | 제안 |
 | 중간 | GPU별 outside 상수표 완성 (g7 + 후보 GPU 작은 조건 실측) | AWS + INUGPU | 일부 있음 |
 | 중간 | tinyllama b128/128/256 +204 MiB(cu128) 반복 측정, CNN cuDNN 영향 분리 | INUGPU | 미실행 |
@@ -116,11 +116,11 @@
 | 알고 싶은 것 | 문서 |
 |---|---|
 | 현재 측정 방식의 정확한 정의 | `docs/ai-context/AI_CONTEXT_KO.md` §5, `docs/04` |
-| reserved 구성·예측 가이드·R_min | `docs/05`, `gpu-vm/05-fp16-vram/handoff_inuos/` |
+| reserved 구성·예측 가이드·R_min | `docs/05`, `measurement/local-gpu-vm/05-fp16-vram/handoff_inuos/` |
 | 드라이버·PyTorch·CUDA·GPU·outside 영향 | `docs/06` |
 | 코드·이미지·번들 계보 | `docs/07` |
-| CPU 예측 방법과 v3 정확도 | `cpu-vm/INUOS_CONTEXT_KO.md`, `cpu-vm/docs/03`, `cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_report.md` |
-| outside 초기 연구 | `docs/02`, `gpu-vm/02-outside-analysis/NOTION_SUMMARY_20261108.md` |
-| 조건별 GPU 정답값 (byte) | `gpu-vm/05-fp16-vram/results/gpu_*_per_condition.csv` (3090 L1024·L256·cu128, T4 L256) |
+| CPU 예측 방법과 v3 정확도 | `prediction/local-cpu-vm/INUOS_CONTEXT_KO.md`, `prediction/local-cpu-vm/docs/03`, `prediction/local-cpu-vm/03-fp16-cpu-prediction/handoff_codex/reserved_prediction_report.md` |
+| outside 초기 연구 | `docs/02`, `measurement/local-gpu-vm/02-outside-analysis/NOTION_SUMMARY_20261108.md` |
+| 조건별 GPU 정답값 (byte) | `measurement/local-gpu-vm/05-fp16-vram/results/gpu_*_per_condition.csv` (3090 L1024·L256·cu128, T4 L256) |
 | 레포에 없는 대용량 | `EXCLUDED_LARGE_FILES.md` |
 | 노션 | "졸업작품 / 실험 정리" 아래 "reserved 분석", "실행 환경 영향 분석", "보고서용 전체 실험 지도" |

@@ -73,9 +73,9 @@
   - xMem과 GPU의 몇십 MiB 차이가 예측 방법의 문제인지, GPU 자체의 흔들림인지 가르기 위해서다.
 - **방법**
   - opt-125m b16/128/512와 b32/128/512를 각각 15회 측정했다. 매번 새 프로세스·새 컨테이너로, 본실험과 같은 방식이다.
-  - 실행 스크립트: `gpu-vm/05-fp16-vram/run_trace_models_and_repeat.sh` (B 부분)
+  - 실행 스크립트: `measurement/local-gpu-vm/05-fp16-vram/run_trace_models_and_repeat.sh` (B 부분)
   - 보조 근거: L1024와 L256 본실험에 겹치는 245개 조건을 비교했다.
-- **결과** (`gpu-vm/05-fp16-vram/results/repeat_variability_opt125m.csv`, MiB)
+- **결과** (`measurement/local-gpu-vm/05-fp16-vram/results/repeat_variability_opt125m.csv`, MiB)
 
 | 조건 | peak reserved | peak allocated | warmup_0 세그먼트 수 | 요청 수 |
 |---|---|---|---|---|
@@ -108,8 +108,8 @@
     - 상한을 넘으면 실제 cudaMalloc 실패와 같은 경로(캐시 비움 → 재시도 → OOM)를 탄다.
   - `tools/gpu_rmin_search.py`가 상한을 바꿔 가며 ok/OOM 경계를 32 MiB 해상도로 이진 탐색했다. 시도마다 새 프로세스를 쓰고, 7개 조건에서 총 55회 실행했다.
     - 러너: `tools/run_conditions_cap.py` (기존 러너에 `--mem-cap-mib` 추가)
-  - xMem 쪽: `gpu-vm/03-xmem-probes/reserved-anatomy-20261116/capacity_sweep_desc.py` (낮은 주소 규칙, 2 MiB 해상도)
-- **결과** (`gpu-vm/05-fp16-vram/results/rmin_gpu_vs_xmem_desc.csv`, MiB)
+  - xMem 쪽: `measurement/local-gpu-vm/03-xmem-probes/reserved-anatomy-20261116/capacity_sweep_desc.py` (낮은 주소 규칙, 2 MiB 해상도)
+- **결과** (`measurement/local-gpu-vm/05-fp16-vram/results/rmin_gpu_vs_xmem_desc.csv`, MiB)
 
 | 조건 | 상한 없는 GPU | GPU R_min (OOM, ok] | xMem R_min | 차이 |
 |---|---|---|---|---|
@@ -157,12 +157,12 @@
 
 | 내용 | 경로 |
 |---|---|
-| 구성 분해 결과 (조건별 json/txt) | `gpu-vm/05-fp16-vram/results/reserved_anatomy/` (`trace_models/` = 모델별 13개) |
-| 분해 도구 | `gpu-vm/05-fp16-vram/tools/reserved_anatomy.py`, `tools/xmem_replay_variants.py` |
-| GPU trace 원본 | `gpu-vm/05-fp16-vram/runs/rtx3090__trace_models/`, `runs/rtx3090__trace_slack/` (스크립트 `run_trace_models_and_repeat.sh`, `run_trace_slack.sh`) |
-| xMem 재생·주소 규칙·R_inf/R_min | `gpu-vm/03-xmem-probes/reserved-anatomy-20261116/` (스크립트 + `out/`) |
-| 반복 변동 | `gpu-vm/05-fp16-vram/results/repeat_variability_opt125m.csv`, 원본 `runs/rtx3090__repeat_r01~r15/` |
-| GPU R_min | `gpu-vm/05-fp16-vram/results/gpu_rmin_search.jsonl`(시도별), `gpu_rmin_search_summary.jsonl`(조건별), `rmin_gpu_vs_xmem_desc.csv`(비교), 원본 `runs/rtx3090__capsearch/` |
-| GPU 상한 실행 코드 | `gpu-vm/05-fp16-vram/src_cap/cap_worker.py`, `tools/run_conditions_cap.py`, `tools/gpu_rmin_search.py`, `run_gpu_rmin_search.sh` |
-| 실행 로그 | `gpu-vm/05-fp16-vram/logs/trace_models_and_repeat.txt`, `trace_slack.txt`, `gpu_rmin_search.txt` |
-| INUOS 전달 문서 | `gpu-vm/05-fp16-vram/handoff_inuos/` (예측 가이드, 보충, R_min 검증·정정) |
+| 구성 분해 결과 (조건별 json/txt) | `measurement/local-gpu-vm/05-fp16-vram/results/reserved_anatomy/` (`trace_models/` = 모델별 13개) |
+| 분해 도구 | `measurement/local-gpu-vm/05-fp16-vram/tools/reserved_anatomy.py`, `tools/xmem_replay_variants.py` |
+| GPU trace 원본 | `measurement/local-gpu-vm/05-fp16-vram/runs/rtx3090__trace_models/`, `runs/rtx3090__trace_slack/` (스크립트 `run_trace_models_and_repeat.sh`, `run_trace_slack.sh`) |
+| xMem 재생·주소 규칙·R_inf/R_min | `measurement/local-gpu-vm/03-xmem-probes/reserved-anatomy-20261116/` (스크립트 + `out/`) |
+| 반복 변동 | `measurement/local-gpu-vm/05-fp16-vram/results/repeat_variability_opt125m.csv`, 원본 `runs/rtx3090__repeat_r01~r15/` |
+| GPU R_min | `measurement/local-gpu-vm/05-fp16-vram/results/gpu_rmin_search.jsonl`(시도별), `gpu_rmin_search_summary.jsonl`(조건별), `rmin_gpu_vs_xmem_desc.csv`(비교), 원본 `runs/rtx3090__capsearch/` |
+| GPU 상한 실행 코드 | `measurement/local-gpu-vm/05-fp16-vram/src_cap/cap_worker.py`, `tools/run_conditions_cap.py`, `tools/gpu_rmin_search.py`, `run_gpu_rmin_search.sh` |
+| 실행 로그 | `measurement/local-gpu-vm/05-fp16-vram/logs/trace_models_and_repeat.txt`, `trace_slack.txt`, `gpu_rmin_search.txt` |
+| INUOS 전달 문서 | `measurement/local-gpu-vm/05-fp16-vram/handoff_inuos/` (예측 가이드, 보충, R_min 검증·정정) |

@@ -1,6 +1,6 @@
 # 02. outside 메모리 분석 (2026-11-03 ~ 11-10)
 
-> 레포 경로 대응: VM `cloudgpufit-outside/` → 레포 `gpu-vm/02-outside-analysis/`. 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
+> 레포 경로 대응: VM `cloudgpufit-outside/` → 레포 `measurement/local-gpu-vm/02-outside-analysis/`. 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
 
 
 - 대상 디렉터리: `cloudgpufit-outside/` (이 문서의 모든 경로는 이 디렉터리 기준 상대경로)

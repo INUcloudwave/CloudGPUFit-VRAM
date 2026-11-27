@@ -1,6 +1,6 @@
 # 04. FP16 VRAM 실측 (RTX 3090 / AWS 공용 패키지)
 
-> 레포 경로 대응: VM `/home/inugpu/cgf-fp16-vram-20261111/` → 레포 `gpu-vm/05-fp16-vram/` (진행 중인 `runs/rtx3090__main395_l256/`은 종료 후 추가). 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
+> 레포 경로 대응: VM `/home/inugpu/cgf-fp16-vram-20261111/` → 레포 `measurement/local-gpu-vm/05-fp16-vram/` (진행 중인 `runs/rtx3090__main395_l256/`은 종료 후 추가). 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
 
 
 - 루트: `/home/inugpu/cgf-fp16-vram-20261111` (아래 경로는 모두 이 루트 기준 상대경로)

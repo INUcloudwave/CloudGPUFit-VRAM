@@ -25,8 +25,8 @@
 
 | VM | 역할 | 이 브랜치의 디렉터리 |
 |---|---|---|
-| **INUGPU** | RTX 3090 24GB VM. **GPU 실측(정답값)**을 냅니다. 같은 패키지로 AWS GPU 실측도 실행합니다. | `gpu-vm/` |
-| **INUOS** | CPU 전용 VM. 같은 조건을 CPU에서 실행해 allocator 요청을 기록하고 xMem으로 **GPU VRAM을 예측**합니다. | `cpu-vm/` |
+| **INUGPU** | RTX 3090 24GB VM. **GPU 실측(정답값)**을 냅니다. 같은 패키지로 AWS GPU 실측도 실행합니다. | `measurement/local-gpu-vm/` |
+| **INUOS** | CPU 전용 VM. 같은 조건을 CPU에서 실행해 allocator 요청을 기록하고 xMem으로 **GPU VRAM을 예측**합니다. | `prediction/local-cpu-vm/` |
 
 - 두 VM의 Claude 에이전트는 서로 직접 대화하지 못합니다.
   - 파일 전달: INUGPU → INUOS 방향 scp만 됩니다. 반대 방향은 키가 등록되지 않아 막혀 있고, 사용자가 의도적으로 열지 않았습니다.
@@ -47,7 +47,7 @@ docs/                             ← 실험별 상세 문서 (설계·실행 �
   06_env_gpu_effects_KO.md        ← 드라이버·PyTorch·CUDA/cuDNN·GPU 종류 영향, outside, T4 L256, g7/cu128 (11-16~18)
   07_code_env_lineage_KO.md       ← 코드·이미지·번들·조건표 계보 (무엇이 언제 왜 바뀌었나)
   00_REPORT_MAP_KO.md             ← 보고서용 통합 지도 (먼저 읽기)
-gpu-vm/
+measurement/local-gpu-vm/
   00-early-scripts/               ← VM 홈의 초기 단독 스크립트·결과 (ResNet/YOLO 벤치, 14B OOM 테스트 등)
   01-cloudgpufit-bench/           ← 342조건 벤치 하네스 v1~v3, results/ (원본 JSON 포함)
   02-outside-analysis/            ← outside 분석 전체 (outside-lab 코드, results, AWS 번들·결과)
@@ -66,7 +66,7 @@ gpu-vm/
     src_env/, envcmp/             ← 환경 비교 래퍼(세 시점 outside)·AWS 실행 스크립트·가이드·AWS 호스트 기록(records_aws_g4dn/)
     runs/aws-g4dn.xlarge__*       ← AWS T4 결과 (L256 395, envcmp A/C/B). 내부 IP·instance-id는 가림
     handoff_codex/                ← 11-12 GPU 매니페스트(gpu_manifest.json)
-cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자리 (§9)
+prediction/local-cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자리 (§9)
 ```
 
 - 제외한 것: 모델 캐시(hf-cache), Docker 이미지 tar, xMem 원본 저장소(.git), 50MB 초과 파일 8개(`EXCLUDED_LARGE_FILES.md`), 진행 중인 L256 결과
@@ -78,17 +78,17 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
 
 ### 4.0 그 이전 실험 (2026-03 ~ 10) — 완료, 상세는 `docs/01_early_and_bench.md`, `docs/03_xmem_probes_reserved_diag.md`
 
-- 03-31: ResNet-50/YOLOv5s FP32 벤치마크 (`gpu-vm/00-early-scripts/`). 당시 목적은 CloudSim 입력값
-- 08-16~23: xMem 단독 검증 프로브·GT 스크립트 (`gpu-vm/03-xmem-probes/`). 결과는 대부분 stdout만 남음
+- 03-31: ResNet-50/YOLOv5s FP32 벤치마크 (`measurement/local-gpu-vm/00-early-scripts/`). 당시 목적은 CloudSim 입력값
+- 08-16~23: xMem 단독 검증 프로브·GT 스크립트 (`measurement/local-gpu-vm/03-xmem-probes/`). 결과는 대부분 stdout만 남음
 - 09-14: Qwen2.5-14B FP16 24GB 적재 테스트: strict는 LOAD_OOM, offload는 0.57 tok/s
-- 10-06~27: cloudgpufit-bench (`gpu-vm/01-cloudgpufit-bench/`)
+- 10-06~27: cloudgpufit-bench (`measurement/local-gpu-vm/01-cloudgpufit-bench/`)
   - 모델 9종(gpt2×3, t5×3, mobilenet/resnet-50/vit-large) × 342조건 × 5모드(performance/memory/first_logits/tokens/components), eager attention, fp16/fp32/bf16
   - v1 17.8시간 → v3(모델 공유+hybrid 격리+반복 축소) 3.7시간. memory peak는 342 중 326 완전 일치, 지연 p90은 중앙값 1~2% 차이
   - 이 폴더에는 RTX 3090 결과만 있음. AWS(T4/A10G/L4/L40S) 342조건 결과는 이 VM에 없음(미확인)
 
 ### 4.1 outside 분석 (INUGPU 3090 + AWS, 2026-11-03 ~ 11-10) — 완료
 
-- 위치: `gpu-vm/02-outside-analysis/`
+- 위치: `measurement/local-gpu-vm/02-outside-analysis/`
   - 종합 문서: `NOTION_SUMMARY_20261108.md`
   - 실험별 보고서: `reports/*.REPORT_KO.md`
 - outside 정의: 같은 조회 시점의 `NVML 프로세스 메모리 − torch.cuda.memory_reserved`
@@ -107,7 +107,7 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
 
 ### 4.2 reserved 오차 원인 분리 trace 수집 (INUGPU, 2026-11-10) — 완료
 
-- 위치: `gpu-vm/04-reserved-diag/`
+- 위치: `measurement/local-gpu-vm/04-reserved-diag/`
   - 요청서: `handoff/GPU_COLLECTION_REQUEST.md` (INUOS 작성)
 - 배경: CPU의 xMem 예측 reserved가 GPU 실측보다 크게 작았습니다. 예: L4 gpt2 FP16 b4/768/128에서 CPU 928MiB, GPU 1678MiB.
 - 원인 후보
@@ -120,7 +120,7 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
 
 ### 4.3 FP16 VRAM 파일럿 26개 (INUGPU 3090, 2026-11-11) — 완료
 
-- 위치: `gpu-vm/05-fp16-vram/results/pilot/`
+- 위치: `measurement/local-gpu-vm/05-fp16-vram/results/pilot/`
   - 보고서: `REPORT_rtx3090_pilot_eager_vs_default_KO.md`
 - 비교: 26개 조건을 v1(eager 고정)과 v2(transformers 기본 attention)로 측정했습니다.
 - 확인된 결론
@@ -136,7 +136,7 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
 
 ### 4.4 본실험 395개 — 1024 포함 조건표 (INUGPU 3090, 2026-11-12) — 완료
 
-- 위치: `gpu-vm/05-fp16-vram/results/main395_L1024/`
+- 위치: `measurement/local-gpu-vm/05-fp16-vram/results/main395_L1024/`
 - 조건표 `config/conditions_main395.json` (sha256 `2634bda7…`)
   - 텍스트 6종(OPT, TinyLlama, Qwen, T5×3)은 입력·생성 길이 {128,512,1024}²
 - 실행: 2026-11-12 09:51 ~ 23:13 (measure 11.3시간, validate 2.1시간)
@@ -159,7 +159,7 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
 - 예상 소요: measure 약 6.2시간 + validate 약 1.4시간
 - 결과(INUGPU): `runs/rtx3090__main395_l256/`. 끝나면 `summary.csv`가 생기고, `tools/export_for_inuos.py`로 조건별 CSV를 만듭니다.
   - **완료(11-16 00:45)**: measure 384 ok / 11 gpu_oom (gpt2-xl b128 3개, t5-3b b128 8개, 모두 warmup_0), validate 377 ok / 18 gpu_oom
-  - 조건별 결과: `gpu-vm/05-fp16-vram/results/gpu_rtx3090_main395_L256_per_condition.csv`, 원본 `runs/rtx3090__main395_l256/`
+  - 조건별 결과: `measurement/local-gpu-vm/05-fp16-vram/results/gpu_rtx3090_main395_L256_per_condition.csv`, 원본 `runs/rtx3090__main395_l256/`
 
 ### 4.6 AWS 실측 (사용자 직접 실행)
 
@@ -211,7 +211,7 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
 
 ## 5. GPU 측정 방식 (v2, 현재 기준) — 정확한 정의
 
-- 정답 코드는 `gpu-vm/05-fp16-vram/src/vram_worker.py`입니다. 아래 줄번호는 이 파일 기준입니다.
+- 정답 코드는 `measurement/local-gpu-vm/05-fp16-vram/src/vram_worker.py`입니다. 아래 줄번호는 이 파일 기준입니다.
 - 환경
   - Docker 이미지 `cloudgpufit-bench:cu124-v1` (ID `sha256:457da255…`)
   - python 3.11.11, torch 2.6.0+cu124, cuDNN 90100, transformers 4.52.4
@@ -284,7 +284,7 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
 - 결과 파일
   - `results/main395/status_summary.json`
   - `results/main395/gpu_trace_request_diff.jsonl`: GPU trace와 CPU 요청의 차이
-- INUOS가 남긴 미해결 질문과 INUGPU의 답: `gpu-vm/05-fp16-vram/INUOS_GPU_EXPERIMENT_SETUP_KO.md` §8
+- INUOS가 남긴 미해결 질문과 INUGPU의 답: `measurement/local-gpu-vm/05-fp16-vram/INUOS_GPU_EXPERIMENT_SETUP_KO.md` §8
   - cuBLAS workspace(8,519,680 B)와 cuBLASLt(1 MiB) 요청이 6개 trace 밖에서 어떻게 나오는지는 미확인입니다.
   - T5에서 GPU 8KB vs CPU 16KB, GPU 1MiB vs CPU 2MiB처럼 정확히 2배 차이 나는 요청이 있습니다. 원인은 미확인입니다.
     - 후보: FP32 실행 텐서에 FP16 환산이 빠진 것, 또는 T5LayerNorm의 float32 연산
@@ -306,14 +306,14 @@ cpu-vm/                            ← INUOS 코드와 문서가 들어갈 자�
   2. 오차가 큰 그룹은 요청 목록 차이(`gpu_trace_request_diff`)를 봅니다. xMem 정책은 재생 실험에서 검증이 끝났습니다.
   3. L1024와 L256에 겹치는 245개의 재현성을 확인합니다.
 
-## 9. `cpu-vm/` 디렉터리에 넣을 것 (INUOS에서 직접 올려야 함)
+## 9. `prediction/local-cpu-vm/` 디렉터리에 넣을 것 (INUOS에서 직접 올려야 함)
 
-- 이 문서와 `gpu-vm/`는 INUGPU에서 만들었습니다. INUOS 코드는 INUOS에서 올려야 정확합니다.
+- 이 문서와 `measurement/local-gpu-vm/`는 INUGPU에서 만들었습니다. INUOS 코드는 INUOS에서 올려야 정확합니다.
 - 권장 구성
-  - `cpu-vm/cgf-fp16-680/`: `src/`, `tools/`, `docs/`, `manifest/`, `results/main395/`(요약 파일만), `README.md`
-  - `cpu-vm/cpu-singlepass/`: `CloudGPUFit-cpu-singlepass-20261108`의 예측기 코드
-  - `cpu-vm/handoff_codex/cpu_manifest.json`: 11-12 매니페스트. 4.3MB이므로 원하면 포함합니다.
-  - `cpu-vm/INUOS_CONTEXT_KO.md`: INUOS 에이전트가 작성. §7을 최신 상태로 보완하는 문서입니다.
+  - `prediction/local-cpu-vm/cgf-fp16-680/`: `src/`, `tools/`, `docs/`, `manifest/`, `results/main395/`(요약 파일만), `README.md`
+  - `prediction/local-cpu-vm/cpu-singlepass/`: `CloudGPUFit-cpu-singlepass-20261108`의 예측기 코드
+  - `prediction/local-cpu-vm/handoff_codex/cpu_manifest.json`: 11-12 매니페스트. 4.3MB이므로 원하면 포함합니다.
+  - `prediction/local-cpu-vm/INUOS_CONTEXT_KO.md`: INUOS 에이전트가 작성. §7을 최신 상태로 보완하는 문서입니다.
 - 넣지 말 것: 모델 캐시, `npz`/`pickle` trace, SSH 키, 토큰
 
 ## 10. 운영 제약 (실험 정책, 사용자 지시)

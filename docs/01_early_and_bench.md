@@ -1,6 +1,6 @@
 # 01. 초기 실험 및 cloudgpufit-bench (INUGPU, RTX 3090)
 
-> 레포 경로 대응: VM `/home/inugpu/<파일>` → 레포 `gpu-vm/00-early-scripts/` (루트 스크립트), `cloudgpufit-bench/` → `gpu-vm/01-cloudgpufit-bench/`. 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
+> 레포 경로 대응: VM `/home/inugpu/<파일>` → 레포 `measurement/local-gpu-vm/00-early-scripts/` (루트 스크립트), `cloudgpufit-bench/` → `measurement/local-gpu-vm/01-cloudgpufit-bench/`. 대용량 제외 파일은 `EXCLUDED_LARGE_FILES.md` 참고.
 
 
 > 작성 근거: `/home/inugpu` 아래 파일 내용·mtime·결과 JSON/CSV, 그리고 셸 히스토리에 남은 일부 명령. 경로는 모두 `/home/inugpu` 기준 상대경로.
