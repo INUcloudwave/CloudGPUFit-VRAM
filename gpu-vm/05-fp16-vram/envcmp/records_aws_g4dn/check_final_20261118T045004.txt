@@ -1,0 +1,17 @@
+current driver: 580.196.07   A kernel: 7.0.0-1017-aws   labels: ['aws-g4dn.xlarge__envcmp_A', 'aws-g4dn.xlarge__envcmp_B', 'aws-g4dn.xlarge__envcmp_B__rerunconfirm', 'aws-g4dn.xlarge__envcmp_C', 'aws-g4dn.xlarge__envcmp_C__rerun1']
+A: ok 39/39
+C: ok 33/33, expected C load errors 6/6
+B: ok 39/39
+rerun label aws-g4dn.xlarge__envcmp_B__rerunconfirm: n=1 status=['ok'] driver=['580.196.07'] torch=['2.6.0+cu124'] -> valid as B
+rerun label aws-g4dn.xlarge__envcmp_C__rerun1: n=6 status=['compat_or_runtime_error'] driver=['595.112.07'] torch=['2.5.1+cu124'] -> valid as C
+
+PROBLEMS (2):
+  - C: attention diag attention_kernels_no_bin.json missing (diagnostic only)
+  - HOST_RECORD B_before_20261117T131920 (GPU check containers) during aws-g4dn.xlarge__envcmp_B/tinyllama-1.1b-chat__b32__in256__new512 -> re-run that condition to confirm
+
+REDO:
+  [C] needs driver 595.112.07 (now 580.196.07) -> switch driver first (see GUIDE / driver swap commands)
+    attention diag: see GUIDE (run_env.sh C re-runs it if attention_kernels.json is missing; for C use the no_bin command)
+  [B] needs driver 580.196.07 (now 580.196.07) OK
+    confirm (separate label, originals untouched):
+      echo '{"condition_ids": ["tinyllama-1.1b-chat__b32__in256__new512"]}' > /tmp/redo_B.json && bash envcmp/rerun_flagged.sh B /tmp/redo_B.json confirm ~/hf-cache

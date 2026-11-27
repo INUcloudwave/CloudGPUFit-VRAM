@@ -1,0 +1,377 @@
+#!/usr/bin/env python3
+"""Single-process outside probe. No torch import before the marked stage.
+
+Use pilot.py to launch; --pid=host is required inside Docker for NVML PID matching.
+Raw invalid values and exceptions are retained. No maximum subtraction or clamp.
+"""
+import argparse
+import contextlib
+import gc
+import hashlib
+import importlib.metadata
+import json
+import os
+import platform
+import subprocess
+import threading
+import time
+import traceback
+import uuid as uuidlib
+from pathlib import Path
+
+ENV_KEYS = ['CUDA_VISIBLE_DEVICES','NVIDIA_VISIBLE_DEVICES','CUDA_MODULE_LOADING',
+    'CUDA_MODULE_DATA_LOADING','PYTORCH_CUDA_ALLOC_CONF','PYTORCH_ALLOC_CONF',
+    'PYTORCH_NO_CUDA_MEMORY_CACHING','CUBLAS_WORKSPACE_CONFIG','CUBLASLT_WORKSPACE_SIZE',
+    'CUDA_LAUNCH_BLOCKING','NVIDIA_TF32_OVERRIDE','TORCH_CUDNN_V8_API_LRU_CACHE_LIMIT',
+    'CUDA_MPS_PIPE_DIRECTORY','CUDA_MPS_LOG_DIRECTORY','CUDA_CACHE_PATH',
+    'CUDA_CACHE_DISABLE','OMP_NUM_THREADS','MKL_NUM_THREADS','HF_HOME']
+
+def decode(v):
+    return v.decode() if isinstance(v,bytes) else v
+
+def canonical_gpu_uuid(value):
+    text=decode(value) if isinstance(value,bytes) else str(value)
+    if text[:4].lower()=='gpu-':text=text[4:]
+    return str(uuidlib.UUID(text))
+
+def attempt(fn):
+    try: return {'value':fn()}
+    except Exception as e: return {'value':None,'error':type(e).__name__+': '+str(e)}
+
+def versions():
+    result={}
+    for d in importlib.metadata.distributions():
+        n=d.metadata.get('Name','')
+        if n.lower() in ('torch','transformers','accelerate','nvidia-ml-py','pynvml') or n.startswith('nvidia-'):
+            result[n]=d.version
+    return result
+
+def cuda_versions_late():
+    """Diagnostic driver/runtime queries only AFTER all primary measurements."""
+    import ctypes
+    result={}
+    paths=sorted(set(line.split()[-1] for line in Path('/proc/self/maps').read_text().splitlines()
+        if '/' in line and any(x in line for x in ('libcuda','libcublas','libcudnn','libtorch_cuda'))))
+    result['loaded_cuda_library_paths']=paths
+    for key,libname,fn in [('driver_api','libcuda.so.1','cuDriverGetVersion')]:
+        try:
+            lib=ctypes.CDLL(libname);v=ctypes.c_int();code=getattr(lib,fn)(ctypes.byref(v))
+            result[key]=dict(code=code,version=v.value)
+        except Exception as e:result[key]=dict(error=str(e))
+    runtimes=[p for p in paths if 'libcudart.so' in p]
+    if runtimes:
+        try:
+            lib=ctypes.CDLL(runtimes[0]);v=ctypes.c_int();code=lib.cudaRuntimeGetVersion(ctypes.byref(v))
+            result['runtime_api']=dict(code=code,version=v.value)
+        except Exception as e:result['runtime_api']=dict(error=str(e))
+    try:
+        lib=ctypes.CDLL('libcuda.so.1');v=ctypes.c_int();code=lib.cuModuleGetLoadingMode(ctypes.byref(v))
+        result['module_loading']=dict(code=code,raw=v.value,mode={1:'EAGER',2:'LAZY'}.get(v.value,'unknown'))
+    except Exception as e:result['module_loading']=dict(error=str(e))
+    return result
+
+def nvml_snapshot(nv, h, pid, capacity):
+    errors=[]; by_kind={}; all_pids=set(); own=[]
+    for kind,fn in [('compute',nv.nvmlDeviceGetComputeRunningProcesses),
+                    ('graphics',nv.nvmlDeviceGetGraphicsRunningProcesses)]:
+        try:
+            rows=[]
+            for p in fn(h):
+                raw=getattr(p,'usedGpuMemory',None)
+                rows.append(dict(pid=p.pid,usedGpuMemory=raw,
+                    gpuInstanceId=getattr(p,'gpuInstanceId',None),computeInstanceId=getattr(p,'computeInstanceId',None)))
+                all_pids.add(p.pid)
+                if p.pid==pid: own.append(raw)
+            by_kind[kind]=rows
+        except Exception as e:
+            errors.append(kind+': '+type(e).__name__+': '+str(e))
+    # Same PID in compute and graphics is not added twice. Conflicts are ambiguous.
+    valid=set(v for v in own if isinstance(v,int) and 0<=v<=capacity)
+    value=next(iter(valid)) if len(valid)==1 and all(v in valid for v in own) else None
+    return dict(nvml_process_bytes=value,nvml_own_raw=own,processes=by_kind,
+        other_gpu_pids=sorted(all_pids-{pid}),errors=errors,
+        own_match_status='ok' if value is not None else 'absent' if not own else 'invalid_or_ambiguous')
+
+class Recorder:
+    def __init__(self,nv,h,capacity,args):
+        self.nv=nv; self.h=h; self.capacity=capacity; self.args=args; self.torch=None
+        self.rows=[]; self.events=[]; self.stage='pre_torch_import'; self.index=0
+        self.lock=threading.Lock(); self.stop=threading.Event(); self.thread=None
+
+    def metrics(self):
+        if self.torch is None or not self.torch.cuda.is_initialized():
+            return dict(initialized=False,allocated_bytes=None,reserved_bytes=None)
+        t=self.torch
+        return dict(initialized=True,allocated_bytes=t.cuda.memory_allocated(0),reserved_bytes=t.cuda.memory_reserved(0))
+
+    def sample(self,kind):
+        with self.lock:
+            row=dict(schema_version=1,pid=os.getpid(),run_id=self.args.run_id,
+                repeat=self.args.repeat,stage=self.stage,kind=kind,
+                wall_time_ns=time.time_ns(),query_begin_ns=time.perf_counter_ns(),
+                order=self.args.query_order,errors=[])
+            def call(label,fn):
+                b=time.perf_counter_ns()
+                try: result=fn()
+                except Exception as e:
+                    result={};row['errors'].append(label+': '+type(e).__name__+': '+str(e))
+                row[label+'_begin_ns']=b;row[label+'_end_ns']=time.perf_counter_ns()
+                row[label]=result;return result
+            tf=lambda: self.metrics()
+            nf=lambda: nvml_snapshot(self.nv,self.h,os.getpid(),self.capacity)
+            if self.args.query_order=='TNT':
+                t=call('torch',tf); n=call('nvml',nf); t2=call('torch_after',tf)
+                row['reserved_bracket_changed']=t.get('reserved_bytes')!=t2.get('reserved_bytes')
+            else:
+                n=call('nvml',nf); t=call('torch',tf); n2=call('nvml_after',nf)
+                row['nvml_bracket_changed']=n.get('nvml_process_bytes')!=n2.get('nvml_process_bytes')
+            nb=n.get('nvml_process_bytes');rb=t.get('reserved_bytes')
+            row.update(allocated_bytes=t.get('allocated_bytes'),reserved_bytes=rb,nvml_process_bytes=nb,
+                outside_bytes=nb-rb if nb is not None and rb is not None else None,
+                other_gpu_pids=n.get('other_gpu_pids',[]),query_end_ns=time.perf_counter_ns())
+            row['device_memory_info_begin_ns']=time.perf_counter_ns()
+            def meminfo():
+                mi=self.nv.nvmlDeviceGetMemoryInfo(self.h)
+                return dict(total_bytes=mi.total,free_bytes=mi.free,used_bytes=mi.used)
+            row['device_memory_info']=attempt(meminfo)
+            row['device_memory_info_end_ns']=time.perf_counter_ns()
+            self.rows.append(row)
+            return row
+
+    def checkpoint(self,name):
+        self.stage=name
+        if self.torch is not None and self.torch.cuda.is_initialized():
+            b=time.perf_counter_ns();self.torch.cuda.synchronize(0)
+            self.events.append(dict(event='checkpoint_synchronize',stage=name,start_ns=b,end_ns=time.perf_counter_ns()))
+        for i in range(self.args.stable_samples):
+            self.sample('stable')
+            if i+1<self.args.stable_samples: time.sleep(self.args.interval_ms/1000)
+
+    @contextlib.contextmanager
+    def action(self,name):
+        self.stage=name
+        ev=dict(event='action',stage=name,start_ns=time.perf_counter_ns(),wall_time_ns=time.time_ns())
+        self.events.append(ev)
+        try: yield
+        finally: ev['end_ns']=time.perf_counter_ns()
+
+    @contextlib.contextmanager
+    def continuous(self):
+        if self.args.sampling=='continuous':
+            def loop():
+                while not self.stop.wait(self.args.interval_ms/1000): self.sample('running')
+            self.stop.clear(); self.thread=threading.Thread(target=loop,daemon=True);self.thread.start()
+        try: yield
+        finally:
+            self.stop.set()
+            if self.thread: self.thread.join(); self.thread=None
+
+def run_model(t,rec,a,manifest):
+    with rec.action('transformers_import'):
+        import transformers as tr
+    rec.checkpoint('after_transformers_import')
+    plan=json.loads(Path(a.plan).read_text());case=next(c for c in plan['cases'] if c['case_id']==a.case_id)
+    pins=json.loads(Path(a.revisions).read_text());pin=pins[case['model']]
+    manifest.update(case=case,revision=pin,transformers=tr.__version__)
+    dtype={'fp16':t.float16,'fp32':t.float32,'bf16':t.bfloat16}[case['dtype']]
+    cls={'decoder_llm':tr.AutoModelForCausalLM,'text_encdec':tr.AutoModelForSeq2SeqLM,
+         'vision_cls':tr.AutoModelForImageClassification}[case['workload_type']]
+    with rec.action('pretrained_load_to_gpu'):
+        model=cls.from_pretrained(case['model'],revision=pin['revision'],torch_dtype=dtype,
+            low_cpu_mem_usage=True,device_map={'':'cuda:0'},use_safetensors=pin['safetensors'],
+            local_files_only=True,attn_implementation=a.attention).to(device='cuda',dtype=dtype).eval()
+        model.config.output_attentions=False;model.config.output_hidden_states=False
+    rec.checkpoint('after_model_load')
+    p=case['params'];batch=p['batch_size'];kind=case['workload_type'];cfg=model.config
+    with rec.action('cpu_input_prepare'):
+        if kind=='vision_cls':
+            inputs={'pixel_values':t.randn(batch,3,p['resolution'],p['resolution'],dtype=dtype)}
+        else:
+            length=p['seq_len'] if kind=='decoder_llm' else p['encoder_seq_len']
+            inputs={'input_ids':t.randint(3,cfg.vocab_size,(batch,length)),
+                    'attention_mask':t.ones(batch,length,dtype=t.long)}
+            if kind=='text_encdec':
+                inputs['decoder_input_ids']=t.randint(3,cfg.vocab_size,(batch,p['decoder_seq_len']))
+                inputs['decoder_input_ids'][:,0]=cfg.decoder_start_token_id
+            for key in ('input_ids','decoder_input_ids'):
+                if key in inputs:
+                    for special in (cfg.pad_token_id,cfg.eos_token_id,cfg.bos_token_id):
+                        if isinstance(special,int): inputs[key][inputs[key]==special]=3
+            if kind=='text_encdec': inputs['decoder_input_ids'][:,0]=cfg.decoder_start_token_id
+        manifest['input_shapes']={k:list(v.shape) for k,v in inputs.items()}
+        manifest['input_sha256']={k:hashlib.sha256(v.contiguous().view(t.uint8).numpy().tobytes()).hexdigest() for k,v in inputs.items()}
+    def invoke(forward=False):
+        with t.inference_mode():
+            gpu_inputs={k:v.to('cuda') for k,v in inputs.items()}
+            if kind=='vision_cls' or forward:
+                out=model(**gpu_inputs);out.logits.cpu()
+                if not bool(t.isfinite(out.logits).all().item()): raise RuntimeError('nonfinite logits')
+            else:
+                out=model.generate(**gpu_inputs,do_sample=False,num_beams=1,use_cache=True,
+                    min_new_tokens=p['max_new_tokens'],max_new_tokens=p['max_new_tokens'],
+                    pad_token_id=cfg.pad_token_id if cfg.pad_token_id is not None else cfg.eos_token_id,
+                    return_dict_in_generate=False,output_scores=False,output_attentions=False,output_hidden_states=False)
+                out.cpu();prefix=p['seq_len'] if kind=='decoder_llm' else p['decoder_seq_len']
+                if out.shape[1]-prefix!=p['max_new_tokens']: raise RuntimeError('generation length mismatch')
+        t.cuda.synchronize(0)
+    with rec.continuous():
+        with rec.action('first_forward_finite_probe'): invoke(True)
+    rec.checkpoint('after_first_forward')
+    with rec.continuous():
+        with rec.action('first_inference'): invoke()
+    rec.checkpoint('after_first_inference')
+    with rec.action('additional_warmup'):
+        for _ in range(2): invoke()
+    rec.checkpoint('after_warmup3')
+    if a.history=='performance_first':
+        with rec.continuous():
+            with rec.action('performance5'):
+                for _ in range(5): invoke()
+        gc.collect();t.cuda.synchronize(0)  # retain allocator cache, as original hybrid
+        rec.checkpoint('after_performance5')
+    for block in range(3):
+        with rec.continuous():
+            with rec.action('repeated_inference_block'+str(block)):
+                for _ in range(3): invoke()
+        rec.checkpoint('after_repeat_block'+str(block))
+    manifest['model_protocol']='staged probe; extra checkpoints; not bit-for-bit original bench history'
+    manifest['generation_settings']=dict(do_sample=False,num_beams=1,use_cache=True,min_new_tokens=p.get('max_new_tokens'),max_new_tokens=p.get('max_new_tokens'))
+
+def run_ops(t,rec,a):
+    dtype={'fp16':t.float16,'fp32':t.float32,'bf16':t.bfloat16}[a.dtype]
+    ops=a.op_order.split(',') if a.scenario=='ops' else [a.scenario]
+    for op in ops:
+        with rec.action(op+'_input_prepare'):
+            if op=='gemm':
+                x=t.randn(512,512,dtype=dtype).cuda();y=t.randn(512,512,dtype=dtype).cuda();fn=lambda:x@y
+            elif op=='conv':
+                x=t.randn(1,16,64,64,dtype=dtype).cuda();y=t.randn(32,16,3,3,dtype=dtype).cuda()
+                fn=lambda:t.nn.functional.conv2d(x,y,padding=1)
+            elif op=='attention':
+                x=t.randn(1,8,128,64,dtype=dtype).cuda();y=x.clone();z=x.clone()
+                if a.attention=='eager': fn=lambda:((x@y.transpose(-2,-1))/8).softmax(-1)@z
+                else:
+                    from torch.nn.attention import SDPBackend,sdpa_kernel
+                    backend={'math':SDPBackend.MATH,'flash':SDPBackend.FLASH_ATTENTION,
+                             'efficient':SDPBackend.EFFICIENT_ATTENTION}[a.attention]
+                    def fn():
+                        with sdpa_kernel(backend):return t.nn.functional.scaled_dot_product_attention(x,y,z)
+            else: raise ValueError(op)
+        rec.checkpoint('after_'+op+'_inputs')
+        for stage,count in [('first',1),('warmup',3),('repeat0',10),('repeat1',10),('repeat2',10)]:
+            with rec.continuous():
+                with rec.action(op+'_'+stage):
+                    with t.inference_mode():
+                        for _ in range(count):
+                            output=fn();del output
+            rec.checkpoint('after_'+op+'_'+stage)
+        del fn,x,y
+        if op=='attention': del z
+        gc.collect();rec.checkpoint('after_'+op+'_release_cache_retained')
+
+def main(a):
+    out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
+    manifest=dict(schema_version=1,run_id=a.run_id,independent_repeat=a.repeat,pid=os.getpid(),
+        started_wall_ns=time.time_ns(),args=vars(a),environment={k:os.environ.get(k) for k in ENV_KEYS},
+        packages=versions(),python=platform.python_version(),kernel=platform.release(),
+        image_id=os.environ.get('OUTSIDE_IMAGE_ID'),instance_label=os.environ.get('OUTSIDE_INSTANCE_LABEL','local'),
+        image_repo_digests=os.environ.get('OUTSIDE_IMAGE_REPODIGESTS'),
+        source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        proc_status=Path('/proc/self/status').read_text(),status='starting')
+    rec=None
+    criteria_path=Path(__file__).with_name('criteria.json')
+    if criteria_path.exists():manifest['criteria_sha256']=hashlib.sha256(criteria_path.read_bytes()).hexdigest()
+    try:
+        import pynvml as nv
+        nv.nvmlInit();h=nv.nvmlDeviceGetHandleByUUID(a.gpu_uuid.encode())
+        mi=nv.nvmlDeviceGetMemoryInfo(h)
+        manifest['gpu']=dict(uuid=decode(nv.nvmlDeviceGetUUID(h)),name=decode(nv.nvmlDeviceGetName(h)),
+            total_bytes=mi.total,free_at_start_bytes=mi.free,used_at_start_bytes=mi.used,
+            driver=decode(nv.nvmlSystemGetDriverVersion()),
+            mig=attempt(lambda:list(nv.nvmlDeviceGetMigMode(h))),
+            architecture=attempt(lambda:nv.nvmlDeviceGetArchitecture(h)),
+            cuda_compute_capability=attempt(lambda:list(nv.nvmlDeviceGetCudaComputeCapability(h))),
+            virtualization=attempt(lambda:nv.nvmlDeviceGetVirtualizationMode(h)))
+        state=nvml_snapshot(nv,h,os.getpid(),mi.total);manifest['initial_nvml']=state
+        if state['errors'] or state['other_gpu_pids']: raise RuntimeError('NVML queries unavailable or other GPU processes; inspect manifest')
+        mig=manifest['gpu']['mig'].get('value')
+        if mig and mig[0]!=0: raise RuntimeError('MIG is outside this single physical GPU protocol')
+        if os.environ.get('CUDA_MPS_PIPE_DIRECTORY'): raise RuntimeError('MPS environment requires separate protocol')
+        rec=Recorder(nv,h,mi.total,a);rec.checkpoint('before_torch_import')
+        with rec.action('torch_import'):
+            import torch as t
+            rec.torch=t
+        manifest['environment_after_torch_import']={k:os.environ.get(k) for k in ENV_KEYS}
+        rec.checkpoint('after_torch_import')
+        if a.api_probe:
+            with rec.action('preinit_memory_api_probe'):
+                before=t.cuda.is_initialized()
+                values=[t.cuda.memory_allocated(0),t.cuda.memory_reserved(0)]
+                manifest['preinit_api_probe']=dict(before_initialized=before,values=values,after_initialized=t.cuda.is_initialized())
+            rec.checkpoint('after_preinit_api_probe')
+        with rec.action('cuda_init'): t.cuda.init()
+        manifest['environment_after_cuda_init']={k:os.environ.get(k) for k in ENV_KEYS}
+        rec.checkpoint('after_cuda_init')
+        if t.cuda.device_count()!=1: raise RuntimeError('Expose exactly one GPU')
+        prop=t.cuda.get_device_properties(0)
+        manifest['torch_gpu']=dict(name=prop.name,total_memory=prop.total_memory,major=prop.major,minor=prop.minor,
+            multi_processor_count=prop.multi_processor_count,uuid=str(getattr(prop,'uuid','unavailable')))
+        manifest['uuid_check']=dict(torch_raw=manifest['torch_gpu']['uuid'],
+            nvml_raw=manifest['gpu']['uuid'],requested_raw=a.gpu_uuid)
+        identities=[canonical_gpu_uuid(x) for x in
+            (manifest['torch_gpu']['uuid'],manifest['gpu']['uuid'],a.gpu_uuid)]
+        manifest['uuid_check'].update(normalized=identities,match=len(set(identities))==1)
+        if len(set(identities))!=1:
+            raise RuntimeError('CUDA/NVML UUID mismatch')
+        t.set_num_threads(a.threads);t.manual_seed(20261006)
+        t.backends.cuda.matmul.allow_tf32=False;t.backends.cudnn.allow_tf32=False;t.backends.cudnn.benchmark=False
+        manifest.update(torch=t.__version__,cuda_build=t.version.cuda,torch_config=t.__config__.show(),
+            torch_arch_list=t.cuda.get_arch_list(),tf32=False,cudnn_benchmark=False,
+            allocator_backend=attempt(lambda:t.cuda.get_allocator_backend()))
+        rec.checkpoint('after_device_metadata_and_seed')
+        with rec.action('first_gpu_allocation'): allocation=t.empty(1,device='cuda')
+        rec.checkpoint('after_first_gpu_allocation')
+        del allocation
+        if a.scenario=='model':run_model(t,rec,a,manifest)
+        elif a.scenario!='init': run_ops(t,rec,a)
+        rec.checkpoint('final_idle')
+        # Late diagnostics must not contaminate earlier stages.
+        manifest['late_cudnn_version']=attempt(lambda:t.backends.cudnn.version())
+        manifest['late_cuda_diagnostics']=cuda_versions_late()
+        manifest['pip_freeze']=subprocess.run([os.sys.executable,'-m','pip','freeze'],capture_output=True,text=True).stdout
+        def final_memory():
+            mi=nv.nvmlDeviceGetMemoryInfo(h)
+            return dict(total_bytes=mi.total,free_bytes=mi.free,used_bytes=mi.used)
+        manifest['device_final']=attempt(final_memory)
+        manifest['status']='ok'
+    except Exception:
+        manifest['status']='error';manifest['traceback']=traceback.format_exc()
+    finally:
+        if rec:
+            rec.stop.set()
+            if rec.thread:rec.thread.join()
+            with (out/'samples.jsonl').open('w') as f:
+                for row in rec.rows:f.write(json.dumps(row)+'\n')
+            (out/'events.json').write_text(json.dumps(rec.events,indent=2))
+        manifest['ended_wall_ns']=time.time_ns()
+        manifest['environment_at_end']={k:os.environ.get(k) for k in ENV_KEYS}
+        (out/'manifest.json').write_text(json.dumps(manifest,indent=2,default=str))
+    print(json.dumps(dict(output=str(out),status=manifest['status'])))
+    return 0 if manifest['status']=='ok' else 1
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--output',required=True);p.add_argument('--gpu-uuid',required=True)
+    p.add_argument('--run-id',required=True);p.add_argument('--repeat',type=int,default=0)
+    p.add_argument('--scenario',choices=['init','gemm','conv','attention','ops','model'],default='init')
+    p.add_argument('--op-order',default='gemm,conv,attention');p.add_argument('--dtype',choices=['fp16','fp32','bf16'],default='fp16')
+    p.add_argument('--attention',choices=['eager','math','flash','efficient','sdpa'],default='eager')
+    p.add_argument('--history',choices=['direct','performance_first'],default='direct')
+    p.add_argument('--api-probe',action='store_true');p.add_argument('--sampling',choices=['continuous','endpoint'],default='continuous')
+    p.add_argument('--query-order',choices=['TNT','NTN'],default='TNT');p.add_argument('--stable-samples',type=int,default=21)
+    p.add_argument('--interval-ms',type=float,default=50);p.add_argument('--threads',type=int,default=4)
+    p.add_argument('--plan');p.add_argument('--revisions');p.add_argument('--case-id')
+    a=p.parse_args()
+    if a.stable_samples<1 or a.interval_ms<=0:p.error('positive samples and interval required')
+    if a.scenario=='model' and a.attention not in ('eager','sdpa'):p.error('model attention must be eager or sdpa')
+    if a.scenario in ('ops','attention') and a.attention=='sdpa':p.error('choose math/flash/efficient explicitly for attention ops')
+    raise SystemExit(main(a))

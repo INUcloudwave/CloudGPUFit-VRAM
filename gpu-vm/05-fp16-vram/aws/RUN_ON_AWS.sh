@@ -1,0 +1,54 @@
+#!/bin/bash
+# One-shot AWS entry point (run inside tmux). Idempotent: rerun the same command to resume.
+#   tar xf cgf-fp16-aws-full-20261115.tar && cd cgf-fp16-aws-full-20261115
+#   tmux new -s cgf
+#   bash RUN_ON_AWS.sh g6.xlarge            # [HF_CACHE_DIR], default ./hf-cache
+# Steps: checksums -> preflight (instance type) -> image load+verify (skipped if already loaded and identical)
+#        -> model cache verify, else download at pinned revisions (needs huggingface.co) + full content hash verify
+#        -> pilot 26 (measure+validate+check) -> main 395 (measure+validate) only if pilot PASSED.
+# Manifest: config/conditions_main395_l256.json (text lengths {128,256,512}); label aws-<type>__l256.
+# Image variant (2026-11-17): CGF_IMAGE_VARIANT=cu124 (default, cloudgpufit-bench:cu124-v1) | cu128 (cloudgpufit-bench:cu128-v1,
+#   torch 2.7.1+cu128, needed for Blackwell sm_120 e.g. g7). If unset, ./IMAGE_VARIANT (one word) is used when present.
+#   cu128 runs get label suffix __cu128 so they never mix with cu124 results.
+#   Earlier 1024 manifest: CGF_CONDITIONS=conditions_main395.json bash RUN_ON_AWS.sh <type>  (label aws-<type>)
+set -uo pipefail
+HERE=$(dirname "$(readlink -f "$0")"); cd "$HERE"
+IT=${1:?expected instance type, e.g. g6.xlarge}; CACHE=$(readlink -f "${2:-$HERE/hf-cache}")
+export CGF_CONDITIONS=${CGF_CONDITIONS:-conditions_main395_l256.json}
+case $CGF_CONDITIONS in conditions_main395.json) LABEL=aws-$IT ;; conditions_main395_l256.json) LABEL=aws-${IT}__l256 ;;
+  *) echo "ABORT unknown CGF_CONDITIONS=$CGF_CONDITIONS"; exit 1 ;; esac
+EXP=$HERE/cgf-fp16-vram-20261111
+VAR=${CGF_IMAGE_VARIANT:-$( [ -f "$HERE/IMAGE_VARIANT" ] && tr -d ' \n' < "$HERE/IMAGE_VARIANT" || echo cu124)}
+case $VAR in cu124) INFO=$EXP/aws/IMAGE_INFO.json ;; cu128) INFO=$EXP/aws/IMAGE_INFO_cu128.json; LABEL=${LABEL}__cu128 ;;
+  *) echo "ABORT unknown image variant $VAR"; exit 1 ;; esac
+export CGF_IMAGE_INFO=$INFO CGF_IMAGE_TAG=cloudgpufit-bench:$VAR-v1
+IMG_TAR=$HERE/image/cloudgpufit-bench_$VAR-v1.docker-save.tar
+mkdir -p "$CACHE" "$EXP/logs"
+exec > >(tee -a "$EXP/logs/RUN_ON_AWS_${LABEL}.txt") 2>&1
+echo "RUN_ON_AWS start $(date -Iseconds) label=$LABEL image=$CGF_IMAGE_TAG conditions=$CGF_CONDITIONS cache=$CACHE tmux=${TMUX:+yes}"
+[ -n "${TMUX:-}" ] || echo "WARNING: not inside tmux; an ssh disconnect will stop the run"
+sha256sum -c SHA256SUMS || { echo "ABORT checksum"; exit 1; }
+(cd "$EXP" && sha256sum -c --quiet MANIFEST_SHA256SUMS) || { echo "ABORT bundle checksum"; exit 1; }
+bash "$EXP/aws/aws_00_preflight.sh" "$IT" || { echo "ABORT preflight"; exit 1; }
+if python3 -I - "$CGF_IMAGE_INFO" <<'PY'
+import json, subprocess, sys
+i = json.load(open(sys.argv[1]))
+try:
+    iid = subprocess.check_output(["docker", "image", "inspect", "--format", "{{.Id}}", i["tag"]], text=True, stderr=subprocess.DEVNULL).strip()
+    lay = json.loads(subprocess.check_output(["docker", "image", "inspect", "--format", "{{json .RootFS.Layers}}", i["tag"]], text=True))
+except subprocess.CalledProcessError:
+    sys.exit(1)
+ok = iid in (i["oci_index_digest"], i["config_digest"]) and lay == i["rootfs_diff_ids"]
+print("image already loaded:", iid, "match" if ok else "MISMATCH")
+sys.exit(0 if ok else 2)
+PY
+then echo "image ok (already loaded)"
+else bash "$EXP/aws/aws_01_load_image.sh" "$IMG_TAR" || { echo "ABORT image"; exit 1; }
+fi
+if ! bash "$EXP/aws/aws_02_cache.sh" verify "$CACHE"; then
+  bash "$EXP/aws/aws_02_cache.sh" download "$CACHE" || { echo "ABORT model cache"; exit 1; }
+fi
+bash "$EXP/aws/aws_03_pilot.sh" "$LABEL" "$CACHE"
+[ -f "$EXP/runs/$LABEL/PILOT_PASSED" ] || { echo "STOP: pilot not passed -> see $EXP/logs/pilot_$LABEL.txt"; exit 1; }
+bash "$EXP/aws/aws_04_main.sh" "$LABEL" "$CACHE"
+echo "RUN_ON_AWS end $(date -Iseconds)"

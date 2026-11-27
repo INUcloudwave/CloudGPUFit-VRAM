@@ -1,0 +1,136 @@
+{
+  "case": {
+    "case_id": "core__vision_cls__small__bf16__02",
+    "suite": "core",
+    "workload_type": "vision_cls",
+    "model": "google/mobilenet_v2_1.0_224",
+    "size": "small",
+    "dtype": "bf16",
+    "params": {
+      "batch_size": 2,
+      "resolution": 224
+    }
+  },
+  "mode": "components",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.004937547259032726,
+    "model_reuse": 0.0013407599180936813,
+    "input_and_validation": 0.011490943841636181,
+    "finite_output_check": 0.009217324666678905,
+    "warmup": 0.008372501470148563,
+    "measurement": 0.008780911564826965,
+    "postprocessing": 0.0002945680171251297,
+    "complete": 1.9531697034835815e-05
+  },
+  "model_reused": true,
+  "startup_metrics_scope": "reused_resident_model",
+  "startup_peak_allocated_bytes": 15690752,
+  "startup_peak_reserved_bytes": 50331648,
+  "memory_baseline": {
+    "parameter_storage_bytes": 7012306,
+    "buffer_storage_bytes": 68640,
+    "resident_allocated_bytes": 15690752,
+    "resident_reserved_bytes": 50331648
+  },
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "total_vram_bytes": 25769803776,
+    "cuda_total_vram_bytes": 25306529792,
+    "driver": "570.211.01",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "6.8.0-137-generic",
+    "cpu_threads": 4,
+    "available_vcpus": 4,
+    "revision": "75e607b00aeae1297cc89d026a118bce012f5c5a",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "inugpu-rtx3090"
+  },
+  "actual_input_shapes": {
+    "pixel_values": [
+      2,
+      3,
+      224,
+      224
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "pixel_values": "1d25a64fe048e156f4dbadc2fae10a6ae6ba66276695d3909dc6c50139669492"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 6682875043817336,
+      "end_ns": 6682875052516613,
+      "elapsed_ms": 8.699277,
+      "actual_new_tokens_per_sample": 0
+    }
+  ],
+  "component_snapshots": [
+    {
+      "query_begin_ns": 6682875052111231,
+      "nvml_process_bytes": 379584512,
+      "allocated_bytes": 16296960,
+      "reserved_bytes": 50331648,
+      "query_end_ns": 6682875052447071,
+      "gpu_done_ns": 6682875052449164,
+      "self_kv_storage_bytes": 0,
+      "cross_kv_storage_bytes": 0,
+      "outside_reserved_bytes": 329252864,
+      "unclassified_above_idle_bytes": 606208
+    }
+  ],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 36,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 36,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "inference_peak_allocated_bytes": 28328448,
+  "inference_peak_reserved_bytes": 50331648,
+  "scope": "classification_forward",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": true,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 36,
+  "worker_main_seconds": 0.04445408843457699,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": {
+    "seconds": 0.07852465845644474,
+    "allocated_bytes": 15690752,
+    "reserved_bytes": 50331648,
+    "allocator_cache_retained": true
+  },
+  "between_mode_idle": {
+    "seconds": 0.00021496880799531937,
+    "temperature_c": 36,
+    "utilization_percent": 0,
+    "device_used_mib": 810.9375
+  },
+  "case_start_gpu_state": [
+    1.0,
+    37.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    810.9375,
+    36,
+    0
+  ],
+  "worker_exit_code": 0
+}

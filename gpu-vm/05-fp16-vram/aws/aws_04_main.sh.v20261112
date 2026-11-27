@@ -1,0 +1,20 @@
+#!/bin/bash
+# Main experiment (conditions_main395.json): measure all, then validate all. Run inside tmux.
+# Resumable: rerun the same command; finished conditions are skipped, failures are kept (not retried).
+#   bash aws/aws_04_main.sh <gpu_label (same as pilot)> <HF_CACHE_DIR>
+# Default = measure + validate (same as the RTX 3090 VM run). CGF_MAIN_VALIDATE=0 runs measure only.
+set -uo pipefail
+LABEL=$1; CACHE=$(readlink -f "$2"); EXP=$(readlink -f "$(dirname "$0")/.."); cd "$EXP"; mkdir -p logs
+[ -f "runs/$LABEL/PILOT_PASSED" ] || { echo "pilot not passed for $LABEL (runs/$LABEL/PILOT_PASSED missing)"; exit 1; }
+LOG=logs/main395_${LABEL}.txt
+{
+echo MAIN_START $(date -Iseconds)
+MODES="measure validate"; [ "${CGF_MAIN_VALIDATE:-1}" = 0 ] && MODES=measure   # CGF_MAIN_VALIDATE=0: skip validate
+for M in $MODES; do
+  python3 -I src/run_conditions.py --conditions conditions_main395.json --list all --mode $M \
+      --gpu-label "$LABEL" --attn default --hf-cache "$CACHE" || { echo "RUNNER_ABORT $M"; exit 1; }
+  echo ${M^^}_END $(date -Iseconds)
+done
+python3 -I tools/summarize_runs.py "runs/$LABEL" > "logs/main395_${LABEL}_summary.md"
+echo MAIN_END $(date -Iseconds)
+} 2>&1 | tee -a "$LOG"

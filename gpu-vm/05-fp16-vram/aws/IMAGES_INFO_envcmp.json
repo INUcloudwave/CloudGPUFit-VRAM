@@ -1,0 +1,46 @@
+{
+ "bundle_file": "image/cgf-envcmp-images.docker-save.tar",
+ "docker_save_cmd": "docker save cloudgpufit-bench:cu124-v1 cloudgpufit-bench:pt251-cu124-v1",
+ "docker_save_stream_sha256": "e261833b8082fa72700708e633f1592e502412f828ce77bea8fb3ad92809ae79",
+ "docker_save_stream_bytes": 4508747264,
+ "docker_save_deterministic": "two consecutive saves on INUGPU gave the same sha256 (2026-11-17)",
+ "images": [
+  {
+   "env": "A and B",
+   "tag": "cloudgpufit-bench:cu124-v1",
+   "oci_index_digest": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+   "config_digest": "sha256:e33dd4e4e4bcb94cd228312111a02e5258c962c2bd2dcbd5491128358dc425e5",
+   "rootfs_diff_ids": [
+    "sha256:2573e0d8158209ed54ab25c87bcdcb00bd3d2539246960a3d592a1c599d70465",
+    "sha256:d0f994b964fbf9a8f72ceffe842c8a29902139ac4267c15e2180be4581811693",
+    "sha256:88b3ef61d53ea06a7306e7dfb8bec34e5ba6e429a99cbc7388203fac3b236194",
+    "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+    "sha256:47736169f39bcaf9901eee11596a8881a1d4461ed24788d3993f5993b43e181a",
+    "sha256:648943668279613e849183af8040d4ec3d0e4f980b8de06dcb2be858ee884bc7",
+    "sha256:b58bd2bd7c57da2393fa023b290ea7f247be05cc2dde4eb1ee5945595d105522"
+   ],
+   "contents": "python 3.11.11, torch 2.6.0+cu124, cuDNN 90100, transformers 4.52.4 (base pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime)",
+   "note": "identical to aws/IMAGE_INFO.json = image of the earlier g4dn/3090 L256 runs"
+  },
+  {
+   "env": "C",
+   "tag": "cloudgpufit-bench:pt251-cu124-v1",
+   "oci_index_digest": "sha256:0b22fba14104ce1fe5f087908d74f93793f63a1f961cac2b6dafa5bed225efcc",
+   "config_digest": "sha256:f47e2cce010cbed9fa950a6f1fad4b0240d29fb0cc61b6f6c564de387ee1c99b",
+   "rootfs_diff_ids": [
+    "sha256:2573e0d8158209ed54ab25c87bcdcb00bd3d2539246960a3d592a1c599d70465",
+    "sha256:d0f994b964fbf9a8f72ceffe842c8a29902139ac4267c15e2180be4581811693",
+    "sha256:88b3ef61d53ea06a7306e7dfb8bec34e5ba6e429a99cbc7388203fac3b236194",
+    "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+    "sha256:47736169f39bcaf9901eee11596a8881a1d4461ed24788d3993f5993b43e181a",
+    "sha256:648943668279613e849183af8040d4ec3d0e4f980b8de06dcb2be858ee884bc7",
+    "sha256:b58bd2bd7c57da2393fa023b290ea7f247be05cc2dde4eb1ee5945595d105522",
+    "sha256:6636c0b51c8c0b1c5a5d2bb4455b1de0aabe912f573fb076624faedac0d36258",
+    "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+   ],
+   "contents": "FROM cloudgpufit-bench:cu124-v1 (all 7 layers shared) + one pip layer: torch 2.6.0+cu124 -> 2.5.1+cu124, torchvision 0.21.0 -> 0.20.1, torchaudio 2.6.0 -> 2.5.1, triton 3.2.0 -> 3.1.0. Unchanged: python 3.11.11, cuDNN 9.1.0.70 (90100), cuBLAS 12.4.5.8, all other nvidia-* wheels, transformers 4.52.4, numpy 2.2.2",
+   "pip_changes_file_in_image": "/opt/pt251_pip_changes.txt",
+   "dockerfile": "aws/Dockerfile.pt251"
+  }
+ ]
+}

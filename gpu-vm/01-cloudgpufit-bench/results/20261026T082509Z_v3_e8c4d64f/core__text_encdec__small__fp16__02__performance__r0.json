@@ -1,0 +1,164 @@
+{
+  "case": {
+    "case_id": "core__text_encdec__small__fp16__02",
+    "suite": "core",
+    "workload_type": "text_encdec",
+    "model": "google-t5/t5-small",
+    "size": "small",
+    "dtype": "fp16",
+    "params": {
+      "batch_size": 2,
+      "encoder_seq_len": 256,
+      "decoder_seq_len": 1,
+      "max_new_tokens": 64
+    }
+  },
+  "mode": "performance",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.15632357355207205,
+    "model_load": 1.39999171346426,
+    "input_and_validation": 0.0024304091930389404,
+    "finite_output_check": 0.4226834215223789,
+    "warmup": 0.8038212042301893,
+    "measurement": 3.6918653147295117,
+    "postprocessing": 0.016329322941601276,
+    "complete": 3.57702374458313e-05
+  },
+  "model_reused": false,
+  "startup_metrics_scope": "actual_model_load",
+  "startup_peak_allocated_bytes": 245366784,
+  "startup_peak_reserved_bytes": 285212672,
+  "memory_baseline": {
+    "parameter_storage_bytes": 121013248,
+    "buffer_storage_bytes": 0,
+    "resident_allocated_bytes": 121013248,
+    "resident_reserved_bytes": 285212672
+  },
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "total_vram_bytes": 25769803776,
+    "cuda_total_vram_bytes": 25306529792,
+    "driver": "570.211.01",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "6.8.0-137-generic",
+    "cpu_threads": 4,
+    "available_vcpus": 4,
+    "revision": "df1b051c49625cf57a3d0d8d3863ed4d13564fe4",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "inugpu-rtx3090"
+  },
+  "actual_input_shapes": {
+    "input_ids": [
+      2,
+      256
+    ],
+    "attention_mask": [
+      2,
+      256
+    ],
+    "decoder_input_ids": [
+      2,
+      1
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "input_ids": "47936ccb64b720d31cad5705c61f9480a541e8996d52c73ffdd219b25b01a0c7",
+    "attention_mask": "8a472efbc41a4502e6da085422880bc742625c1187f2d36ed39e669d736ac113",
+    "decoder_input_ids": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 6683331875113961,
+      "end_ns": 6683332609337520,
+      "elapsed_ms": 734.223559,
+      "actual_new_tokens_per_sample": 64
+    },
+    {
+      "start_ns": 6683332609355651,
+      "end_ns": 6683333345579928,
+      "elapsed_ms": 736.224277,
+      "actual_new_tokens_per_sample": 64
+    },
+    {
+      "start_ns": 6683333345601655,
+      "end_ns": 6683334082123863,
+      "elapsed_ms": 736.522208,
+      "actual_new_tokens_per_sample": 64
+    },
+    {
+      "start_ns": 6683334082141579,
+      "end_ns": 6683334815726200,
+      "elapsed_ms": 733.584621,
+      "actual_new_tokens_per_sample": 64
+    },
+    {
+      "start_ns": 6683334815743189,
+      "end_ns": 6683335550974445,
+      "elapsed_ms": 735.231256,
+      "actual_new_tokens_per_sample": 64
+    }
+  ],
+  "component_snapshots": [],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 38,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 38,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "inference_peak_allocated_bytes": 145274880,
+  "inference_peak_reserved_bytes": 295698432,
+  "latency_ms": {
+    "n": 5,
+    "mean": 735.1571842,
+    "median": 735.231256,
+    "p90": 736.4030356,
+    "max": 736.522208
+  },
+  "throughput": {
+    "window_seconds": 3.675860484,
+    "batches_per_second": 1.3602257272177798,
+    "samples_per_second": 2.7204514544355596,
+    "request_definition": "one_sample_in_batch",
+    "requests_per_second": 2.7204514544355596,
+    "decoder_prefix_tokens_per_second": 2.7204514544355596,
+    "output_tokens_per_second": 174.1088930838758,
+    "input_tokens_per_second": 696.4355723355033
+  },
+  "scope": "full_generation",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": false,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 38,
+  "worker_main_seconds": 6.493480729870498,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": null,
+  "between_mode_idle": null,
+  "case_start_gpu_state": [
+    1.0,
+    38.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    1.0,
+    38.0,
+    0.0
+  ],
+  "worker_exit_code": 0
+}

@@ -1,0 +1,151 @@
+{
+  "case": {
+    "case_id": "core__vision_cls__medium__bf16__04",
+    "suite": "core",
+    "workload_type": "vision_cls",
+    "model": "microsoft/resnet-50",
+    "size": "medium",
+    "dtype": "bf16",
+    "params": {
+      "batch_size": 8,
+      "resolution": 224
+    }
+  },
+  "mode": "performance",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.11071164812892675,
+    "model_load": 1.4044483648613095,
+    "input_and_validation": 0.043728931806981564,
+    "finite_output_check": 0.35142749827355146,
+    "warmup": 0.008766623213887215,
+    "measurement": 0.056852494366467,
+    "postprocessing": 0.013826628215610981,
+    "complete": 7.238984107971191e-05
+  },
+  "model_reused": false,
+  "startup_metrics_scope": "actual_model_load",
+  "startup_peak_allocated_bytes": 59895808,
+  "startup_peak_reserved_bytes": 85983232,
+  "memory_baseline": {
+    "parameter_storage_bytes": 51114064,
+    "buffer_storage_bytes": 106664,
+    "resident_allocated_bytes": 52577280,
+    "resident_reserved_bytes": 85983232
+  },
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "total_vram_bytes": 25769803776,
+    "cuda_total_vram_bytes": 25306529792,
+    "driver": "570.211.01",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "6.8.0-137-generic",
+    "cpu_threads": 4,
+    "available_vcpus": 4,
+    "revision": "34c2154c194f829b11125337b98c8f5f9965ff19",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "inugpu-rtx3090"
+  },
+  "actual_input_shapes": {
+    "pixel_values": [
+      8,
+      3,
+      224,
+      224
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "pixel_values": "5d9ba70503d8455b0ecfcce21bd1b8d1f2dabdf5ede2d2ea141d4d4ba465e097"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 6683119109444150,
+      "end_ns": 6683119117245042,
+      "elapsed_ms": 7.800892,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 6683119117263146,
+      "end_ns": 6683119124577603,
+      "elapsed_ms": 7.314457,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 6683119124595105,
+      "end_ns": 6683119133619666,
+      "elapsed_ms": 9.024561,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 6683119133634060,
+      "end_ns": 6683119140781486,
+      "elapsed_ms": 7.147426,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 6683119140796540,
+      "end_ns": 6683119147942275,
+      "elapsed_ms": 7.145735,
+      "actual_new_tokens_per_sample": 0
+    }
+  ],
+  "component_snapshots": [],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 35,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 35,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "inference_peak_allocated_bytes": 112592384,
+  "inference_peak_reserved_bytes": 138412032,
+  "latency_ms": {
+    "n": 5,
+    "mean": 7.6866142,
+    "median": 7.314457,
+    "p90": 8.535093400000001,
+    "max": 9.024561
+  },
+  "throughput": {
+    "window_seconds": 0.038498125,
+    "batches_per_second": 129.87645502216017,
+    "samples_per_second": 1039.0116401772814,
+    "request_definition": "one_sample_in_batch",
+    "requests_per_second": 1039.0116401772814
+  },
+  "scope": "classification_forward",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": false,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 35,
+  "worker_main_seconds": 1.9898345787078142,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": null,
+  "between_mode_idle": null,
+  "case_start_gpu_state": [
+    1.0,
+    36.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    1.0,
+    36.0,
+    0.0
+  ],
+  "worker_exit_code": 0
+}

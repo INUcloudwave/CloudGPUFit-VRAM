@@ -1,0 +1,177 @@
+{
+  "case": {
+    "case_id": "core__vision_cls__small__bf16__10",
+    "suite": "core",
+    "workload_type": "vision_cls",
+    "model": "google/mobilenet_v2_1.0_224",
+    "size": "small",
+    "dtype": "bf16",
+    "params": {
+      "batch_size": 4,
+      "resolution": 512
+    }
+  },
+  "mode": "memory",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.016399445943534374,
+    "model_reuse": 0.006634214892983437,
+    "input_and_validation": 0.14746613893657923,
+    "finite_output_check": 0.012003111653029919,
+    "warmup": 0.012948003597557545,
+    "measurement": 0.03593164123594761,
+    "postprocessing": 0.0011956682428717613,
+    "complete": 3.5861507058143616e-05
+  },
+  "model_reused": true,
+  "startup_metrics_scope": "reused_resident_model",
+  "startup_memory_samples": [
+    {
+      "query_begin_ns": 6682931624571833,
+      "nvml_process_bytes": 564133888,
+      "allocated_bytes": 15690752,
+      "reserved_bytes": 234881024,
+      "query_end_ns": 6682931625572205
+    },
+    {
+      "query_begin_ns": 6682931630120194,
+      "nvml_process_bytes": 564133888,
+      "allocated_bytes": 15690752,
+      "reserved_bytes": 234881024,
+      "query_end_ns": 6682931631041104
+    }
+  ],
+  "startup_nvml_sampled_peak_bytes": 564133888,
+  "startup_sampling_errors": [],
+  "startup_peak_allocated_bytes": 15690752,
+  "startup_peak_reserved_bytes": 234881024,
+  "memory_baseline": {
+    "parameter_storage_bytes": 7012306,
+    "buffer_storage_bytes": 68640,
+    "resident_allocated_bytes": 15690752,
+    "resident_reserved_bytes": 234881024
+  },
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "total_vram_bytes": 25769803776,
+    "cuda_total_vram_bytes": 25306529792,
+    "driver": "570.211.01",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "6.8.0-137-generic",
+    "cpu_threads": 4,
+    "available_vcpus": 4,
+    "revision": "75e607b00aeae1297cc89d026a118bce012f5c5a",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "inugpu-rtx3090"
+  },
+  "actual_input_shapes": {
+    "pixel_values": [
+      4,
+      3,
+      512,
+      512
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "pixel_values": "a0e22c4d3dd0fcf448a64488576bf8b2ec756a337d468dcd56d0bf7338971681"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 6682931803603808,
+      "end_ns": 6682931815559075,
+      "elapsed_ms": 11.955267,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 6682931815577846,
+      "end_ns": 6682931827508071,
+      "elapsed_ms": 11.930225,
+      "actual_new_tokens_per_sample": 0
+    },
+    {
+      "start_ns": 6682931827525110,
+      "end_ns": 6682931839412980,
+      "elapsed_ms": 11.88787,
+      "actual_new_tokens_per_sample": 0
+    }
+  ],
+  "component_snapshots": [],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 35,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 35,
+    "sm_clock_mhz": 1695,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "memory_samples": [
+    {
+      "query_begin_ns": 6682931802704602,
+      "nvml_process_bytes": 564133888,
+      "allocated_bytes": 15690752,
+      "reserved_bytes": 234881024,
+      "query_end_ns": 6682931803137886,
+      "cached_unused_bytes": 219190272,
+      "outside_reserved_bytes": 329252864
+    },
+    {
+      "query_begin_ns": 6682931839968474,
+      "nvml_process_bytes": 564133888,
+      "allocated_bytes": 15690752,
+      "reserved_bytes": 234881024,
+      "query_end_ns": 6682931840364728,
+      "cached_unused_bytes": 219190272,
+      "outside_reserved_bytes": 329252864
+    }
+  ],
+  "sampling_errors": [],
+  "nvml_process_sampled_peak_bytes": 564133888,
+  "nvml_sample_coverage": 1.0,
+  "nvml_status": "ok",
+  "inference_peak_allocated_bytes": 144712192,
+  "inference_peak_reserved_bytes": 234881024,
+  "scope": "classification_forward",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": true,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 35,
+  "worker_main_seconds": 0.23261408600956202,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": {
+    "seconds": 0.10115488525480032,
+    "allocated_bytes": 15690752,
+    "reserved_bytes": 234881024,
+    "allocator_cache_retained": true
+  },
+  "between_mode_idle": {
+    "seconds": 1.0020414907485247,
+    "temperature_c": 35,
+    "utilization_percent": 0,
+    "device_used_mib": 986.9375
+  },
+  "case_start_gpu_state": [
+    1.0,
+    35.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    986.9375,
+    35,
+    0
+  ],
+  "worker_exit_code": 0
+}

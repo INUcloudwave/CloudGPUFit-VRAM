@@ -1,0 +1,24 @@
+#!/bin/bash
+# Load the image from a docker-save stream on stdin (or a file arg) and verify it.
+#   streaming: <sender> | bash aws/aws_01_load_image.sh
+#   file:      bash aws/aws_01_load_image.sh cloudgpufit-bench_cu124-v1.docker-save.tar
+set -euo pipefail
+HERE=$(dirname "$(readlink -f "$0")")
+INFO=$HERE/IMAGE_INFO.json
+TMP=$(mktemp -d)
+if [ $# -ge 1 ]; then SRC=$1; else SRC=/dev/stdin; fi
+cat "$SRC" | tee >(sha256sum | cut -d' ' -f1 > "$TMP/sha") >(wc -c > "$TMP/bytes") | docker load
+sleep 2
+python3 -I - "$INFO" "$TMP/sha" "$TMP/bytes" <<'PY'
+import json, subprocess, sys
+info = json.load(open(sys.argv[1])); sha = open(sys.argv[2]).read().strip(); n = int(open(sys.argv[3]).read())
+iid = subprocess.check_output(["docker", "image", "inspect", "--format", "{{.Id}}", info["tag"]], text=True).strip()
+layers = json.loads(subprocess.check_output(["docker", "image", "inspect", "--format", "{{json .RootFS.Layers}}", info["tag"]], text=True))
+res = {"stream_sha256": sha, "stream_sha256_ok": sha == info["docker_save_stream_sha256"],
+       "stream_bytes": n, "stream_bytes_ok": n == info["docker_save_stream_bytes"],
+       "image_id": iid, "image_id_ok": iid in (info["oci_index_digest"], info["config_digest"]),
+       "diff_ids_ok": layers == info["rootfs_diff_ids"]}
+res["IMAGE_OK"] = all(v for k, v in res.items() if k.endswith("_ok"))
+print(json.dumps(res, indent=1))
+sys.exit(0 if res["IMAGE_OK"] else 1)
+PY

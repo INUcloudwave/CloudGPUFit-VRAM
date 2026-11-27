@@ -1,0 +1,52 @@
+기존 cloudgpufit-bench 폴더에 압축을 풀어 사용합니다.
+Docker 이미지 재빌드, 가상환경 설치, HF 모델 재다운로드는 필요 없습니다.
+기존 v2 파일과 기존 결과는 유지됩니다. v3 결과는 별도 폴더에 저장됩니다.
+
+연구실 PC에 ZIP 파일을 가져온 뒤, 그 파일이 있는 폴더에서 VM으로 전송:
+
+scp -P 실제포트번호 -i <키파일 경로> ./cloudgpufit-bench-v3.zip inugpu@실제VM주소:/home/inugpu/cloudgpufit-bench/
+
+VM 터미널:
+
+cd ~/cloudgpufit-bench
+unzip -o cloudgpufit-bench-v3.zip
+python3 run_bench_v3.py --profile local_core --case-set baseline9 --threads 4 --no-temperature-wait --reference results/20261006T083514Z_e0e9d733
+
+9개 모델의 FP16 기준 조건 9개를 실행합니다. 342개 전체 실행이 아닙니다.
+조건/입력/정밀도/반복 수는 앞선 baseline9와 같습니다.
+warmup=3, 본 측정=20, repeats=1, components 본 측정=1.
+first_logits만 독립 프로세스/원본 worker로 측정합니다.
+performance -> memory -> tokens -> components는 조건별 한 프로세스에서 모델을 재사용합니다.
+공유 측정 사이에 동기화/gc는 수행하지만, empty_cache로 예약 캐시를 비우지 않습니다.
+각 조건이 끝나면 프로세스와 컨테이너가 종료되므로 다른 조건으로 캐시가 이어지지 않습니다.
+baseline9의 모델 로딩은 전체 분리 39회 대비 15회입니다(vision의 해당 없는 모드는 제외).
+36도 냉각 대기와 2시간 자동 중단은 없습니다. 온도/진행률/실행 시간은 계속 기록합니다.
+
+완료 시 Results 경로를 보관하고 해당 결과 폴더를 압축해 보내주세요.
+이 검증을 통과한 뒤에 모드별 본 측정 횟수를 줄입니다. 이번에는 줄이지 않았습니다.
+
+이번 대조 결과:
+모델 공유 110.482초 / 모두 분리 132.593초: 약 16.68% 단축.
+GPT-2 memory NVML: 공유 698MiB / 분리 804MiB / 기존 804MiB.
+GPT-2 first_logits p90: 공유 11.518ms / 분리 10.192ms / 기존 9.925ms.
+T5-base first_logits p90: 공유 39.338ms / 분리 31.952ms / 기존 32.276ms.
+T5-base memory NVML: 세 실행 모두 1002MiB.
+실제 할당 텐서 peak는 두 방식에서 같았습니다.
+기록된 실행 환경/조건/측정 범위/입력 shape/본 측정 수는 두 방식에서 같았습니다.
+공유 구조에서 first_logits가 느려지는 세부 원인은 아직 확정되지 않았습니다.
+이번 수정은 해당 측정을 독립 실행하여 공유 상태의 영향을 피하는 방식입니다.
+메모리 캐시 유지로 기존 피크가 재현되는지는 GPU 재검증이 필요합니다.
+
+검증: CPU 프로토콜 테스트 9개 통과, baseline9 dry-run 통과.
+invoke/cache_bytes/storage_bytes 함수의 AST가 원본과 동일함을 확인했습니다.
+개발 환경에서 GPU 실측은 수행하지 않았습니다. v3가 결과 동등성을 통과한 것은 아닙니다.
+
+파일:
+run_bench_v3.py / bench_worker_v3.py: 새 실행 코드
+bench_worker_legacy.py: 원본 그대로, first_logits/분리 실행에 사용
+benchmark_plan_v2.json: 기존 전체 342조건 보존(별도 smoke 조건도 포함)
+compare_results.py: 결과 비교 도구
+test_protocol.py: CPU 검증
+
+기존 모드 재현용 옵션: --isolation shared-case 또는 --isolation separate-mode
+기본값은 --isolation hybrid 입니다.

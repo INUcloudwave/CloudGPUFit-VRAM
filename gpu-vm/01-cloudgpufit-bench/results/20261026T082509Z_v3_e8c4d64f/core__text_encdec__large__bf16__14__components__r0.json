@@ -1,0 +1,326 @@
+{
+  "case": {
+    "case_id": "core__text_encdec__large__bf16__14",
+    "suite": "core",
+    "workload_type": "text_encdec",
+    "model": "google-t5/t5-3b",
+    "size": "large",
+    "dtype": "bf16",
+    "params": {
+      "batch_size": 4,
+      "encoder_seq_len": 128,
+      "decoder_seq_len": 1,
+      "max_new_tokens": 16
+    }
+  },
+  "mode": "components",
+  "repeat": 0,
+  "status": "ok",
+  "stage": "complete",
+  "timings_seconds": {
+    "initialization": 0.004464656114578247,
+    "model_reuse": 0.0008954061195254326,
+    "input_and_validation": 0.013938137330114841,
+    "finite_output_check": 0.09768549352884293,
+    "warmup": 0.5378709184005857,
+    "measurement": 0.5397803941741586,
+    "postprocessing": 0.00032178498804569244,
+    "complete": 2.2914260625839233e-05
+  },
+  "model_reused": true,
+  "startup_metrics_scope": "reused_resident_model",
+  "startup_peak_allocated_bytes": 5711716352,
+  "startup_peak_reserved_bytes": 5955911680,
+  "memory_baseline": {
+    "parameter_storage_bytes": 5703196672,
+    "buffer_storage_bytes": 0,
+    "resident_allocated_bytes": 5711716352,
+    "resident_reserved_bytes": 5955911680
+  },
+  "environment": {
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "total_vram_bytes": 25769803776,
+    "cuda_total_vram_bytes": 25306529792,
+    "driver": "570.211.01",
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cuda_runtime": "12.4",
+    "python": "3.11.11",
+    "kernel": "6.8.0-137-generic",
+    "cpu_threads": 4,
+    "available_vcpus": 4,
+    "revision": "bed96aab9ee46012a5046386105ee5fd0ac572f0",
+    "attention": "eager",
+    "tf32": false,
+    "seed": 20261006,
+    "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+    "instance_label": "inugpu-rtx3090"
+  },
+  "actual_input_shapes": {
+    "input_ids": [
+      4,
+      128
+    ],
+    "attention_mask": [
+      4,
+      128
+    ],
+    "decoder_input_ids": [
+      4,
+      1
+    ]
+  },
+  "finite_check_scope": "every_generation_step_in_components_mode; first_forward_in_other_modes",
+  "input_sha256": {
+    "input_ids": "47936ccb64b720d31cad5705c61f9480a541e8996d52c73ffdd219b25b01a0c7",
+    "attention_mask": "8a472efbc41a4502e6da085422880bc742625c1187f2d36ed39e669d736ac113",
+    "decoder_input_ids": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+  },
+  "raw_invocations": [
+    {
+      "start_ns": 6689296923237818,
+      "end_ns": 6689297462927736,
+      "elapsed_ms": 539.689918,
+      "actual_new_tokens_per_sample": 16
+    }
+  ],
+  "component_snapshots": [
+    {
+      "query_begin_ns": 6689296985995933,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5915933184,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689296986365983,
+      "gpu_done_ns": 6689296986369370,
+      "self_kv_storage_bytes": 1572864,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 1317376
+    },
+    {
+      "query_begin_ns": 6689297017303665,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5918535680,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297017713224,
+      "gpu_done_ns": 6689297017715337,
+      "self_kv_storage_bytes": 3145728,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297048877016,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5920108544,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297049203936,
+      "gpu_done_ns": 6689297049206256,
+      "self_kv_storage_bytes": 4718592,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297080557885,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5921681408,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297080843571,
+      "gpu_done_ns": 6689297080845741,
+      "self_kv_storage_bytes": 6291456,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297111624563,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5923254272,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297111916089,
+      "gpu_done_ns": 6689297111918401,
+      "self_kv_storage_bytes": 7864320,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297143138021,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5924827136,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297143578746,
+      "gpu_done_ns": 6689297143581156,
+      "self_kv_storage_bytes": 9437184,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297174850449,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5926400000,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297175181192,
+      "gpu_done_ns": 6689297175183465,
+      "self_kv_storage_bytes": 11010048,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297206201537,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5927972864,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297206487289,
+      "gpu_done_ns": 6689297206490041,
+      "self_kv_storage_bytes": 12582912,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297238218965,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5929545728,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297238522495,
+      "gpu_done_ns": 6689297238524723,
+      "self_kv_storage_bytes": 14155776,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297269939264,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5931118592,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297270236029,
+      "gpu_done_ns": 6689297270237860,
+      "self_kv_storage_bytes": 15728640,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297301694945,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5932691456,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297301982540,
+      "gpu_done_ns": 6689297301984398,
+      "self_kv_storage_bytes": 17301504,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297333764545,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5934264320,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297334063199,
+      "gpu_done_ns": 6689297334065197,
+      "self_kv_storage_bytes": 18874368,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297365879060,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5935837184,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297366206812,
+      "gpu_done_ns": 6689297366208675,
+      "self_kv_storage_bytes": 20447232,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297397970872,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5937410048,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297398274850,
+      "gpu_done_ns": 6689297398276790,
+      "self_kv_storage_bytes": 22020096,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297429665376,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5938982912,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297429940230,
+      "gpu_done_ns": 6689297429942079,
+      "self_kv_storage_bytes": 23592960,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    },
+    {
+      "query_begin_ns": 6689297461778295,
+      "nvml_process_bytes": 6283067392,
+      "allocated_bytes": 5940555776,
+      "reserved_bytes": 5955911680,
+      "query_end_ns": 6689297462068789,
+      "gpu_done_ns": 6689297462070646,
+      "self_kv_storage_bytes": 25165824,
+      "cross_kv_storage_bytes": 201326592,
+      "outside_reserved_bytes": 327155712,
+      "unclassified_above_idle_bytes": 2347008
+    }
+  ],
+  "component_sampling_errors": [],
+  "gpu_health_before_measurement": {
+    "temperature_c": 54,
+    "sm_clock_mhz": 1860,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "gpu_health_after_measurement": {
+    "temperature_c": 52,
+    "sm_clock_mhz": 1860,
+    "clock_event_reasons": 0,
+    "thermal_slowdown_at_boundary": false
+  },
+  "inference_peak_allocated_bytes": 5944696320,
+  "inference_peak_reserved_bytes": 5955911680,
+  "scope": "full_generation",
+  "timed_region": "CPU tensors ready -> H2D -> inference -> output tensor D2H; excludes model load and preprocessing",
+  "instrumented": true,
+  "memory_guard_exceeded": false,
+  "end_gpu_temperature_c": 52,
+  "worker_main_seconds": 1.1949797049164772,
+  "execution_structure": "shared_case",
+  "between_mode_cleanup": {
+    "seconds": 0.10238253697752953,
+    "allocated_bytes": 5711716352,
+    "reserved_bytes": 5955911680,
+    "allocator_cache_retained": true
+  },
+  "between_mode_idle": {
+    "seconds": 1.0008703162893653,
+    "temperature_c": 52,
+    "utilization_percent": 0,
+    "device_used_mib": 6440.9375
+  },
+  "case_start_gpu_state": [
+    1.0,
+    54.0,
+    0.0
+  ],
+  "start_gpu_state": [
+    6440.9375,
+    52,
+    0
+  ],
+  "worker_exit_code": 0
+}

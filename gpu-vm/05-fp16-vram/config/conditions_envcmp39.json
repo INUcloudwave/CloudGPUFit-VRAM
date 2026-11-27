@@ -1,0 +1,324 @@
+{
+ "schema": "cgf-fp16-vram-conditions/1",
+ "count": 395,
+ "derived_from": "conditions.json + rule (256 added)",
+ "derived_from_sha256": "be7e6867dcf7b4cf219803ec3af098b3254ab355a0b533f9b43349c56e73854e",
+ "rule": "batches 1/8/16/32/128; OPT/TinyLlama/Qwen/T5 lengths {128,256,512}^2; GPT-2 {128,512}^2; vision unchanged; see generate_main_l256.py",
+ "selection": {
+  "source_manifest": "conditions_main395_l256.json",
+  "reference_run": "/home/inugpu/incoming-g4dn-l256/x/runs/aws-g4dn.xlarge__l256",
+  "reference_gpu": "Tesla T4",
+  "reference_driver": "595.112.07",
+  "rules": {
+   "heavy_max_frac": 0.85,
+   "wall_cap_s": 600.0
+  },
+  "n_models": 13,
+  "n_selected": 39,
+  "n_unique": 39,
+  "problems": [],
+  "ref_total_wall_s_selected": 2768.8
+ },
+ "conditions": [
+  {
+   "condition_id": "opt-125m__b1__in128__new128",
+   "model": "facebook/opt-125m",
+   "workload_type": "decoder_llm",
+   "batch_size": 1,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "opt-125m__b32__in256__new128",
+   "model": "facebook/opt-125m",
+   "workload_type": "decoder_llm",
+   "batch_size": 32,
+   "input_len": 256,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "opt-125m__b128__in512__new256",
+   "model": "facebook/opt-125m",
+   "workload_type": "decoder_llm",
+   "batch_size": 128,
+   "input_len": 512,
+   "max_new_tokens": 256
+  },
+  {
+   "condition_id": "tinyllama-1.1b-chat__b1__in128__new128",
+   "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+   "workload_type": "decoder_llm",
+   "batch_size": 1,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "tinyllama-1.1b-chat__b32__in256__new512",
+   "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+   "workload_type": "decoder_llm",
+   "batch_size": 32,
+   "input_len": 256,
+   "max_new_tokens": 512
+  },
+  {
+   "condition_id": "tinyllama-1.1b-chat__b128__in512__new128",
+   "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+   "workload_type": "decoder_llm",
+   "batch_size": 128,
+   "input_len": 512,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "qwen2.5-1.5b-instruct__b1__in128__new128",
+   "model": "Qwen/Qwen2.5-1.5B-Instruct",
+   "workload_type": "decoder_llm",
+   "batch_size": 1,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "qwen2.5-1.5b-instruct__b128__in128__new256",
+   "model": "Qwen/Qwen2.5-1.5B-Instruct",
+   "workload_type": "decoder_llm",
+   "batch_size": 128,
+   "input_len": 128,
+   "max_new_tokens": 256
+  },
+  {
+   "condition_id": "qwen2.5-1.5b-instruct__b128__in512__new256",
+   "model": "Qwen/Qwen2.5-1.5B-Instruct",
+   "workload_type": "decoder_llm",
+   "batch_size": 128,
+   "input_len": 512,
+   "max_new_tokens": 256
+  },
+  {
+   "condition_id": "gpt2__b1__in128__new128",
+   "model": "openai-community/gpt2",
+   "workload_type": "decoder_llm",
+   "batch_size": 1,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "gpt2__b32__in128__new128",
+   "model": "openai-community/gpt2",
+   "workload_type": "decoder_llm",
+   "batch_size": 32,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "gpt2__b128__in128__new128",
+   "model": "openai-community/gpt2",
+   "workload_type": "decoder_llm",
+   "batch_size": 128,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "gpt2-medium__b1__in512__new128",
+   "model": "openai-community/gpt2-medium",
+   "workload_type": "decoder_llm",
+   "batch_size": 1,
+   "input_len": 512,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "gpt2-medium__b16__in128__new512",
+   "model": "openai-community/gpt2-medium",
+   "workload_type": "decoder_llm",
+   "batch_size": 16,
+   "input_len": 128,
+   "max_new_tokens": 512
+  },
+  {
+   "condition_id": "gpt2-medium__b32__in128__new512",
+   "model": "openai-community/gpt2-medium",
+   "workload_type": "decoder_llm",
+   "batch_size": 32,
+   "input_len": 128,
+   "max_new_tokens": 512
+  },
+  {
+   "condition_id": "gpt2-xl__b1__in512__new128",
+   "model": "openai-community/gpt2-xl",
+   "workload_type": "decoder_llm",
+   "batch_size": 1,
+   "input_len": 512,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "gpt2-xl__b8__in128__new512",
+   "model": "openai-community/gpt2-xl",
+   "workload_type": "decoder_llm",
+   "batch_size": 8,
+   "input_len": 128,
+   "max_new_tokens": 512
+  },
+  {
+   "condition_id": "gpt2-xl__b16__in512__new128",
+   "model": "openai-community/gpt2-xl",
+   "workload_type": "decoder_llm",
+   "batch_size": 16,
+   "input_len": 512,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "resnet-18__b1__r128",
+   "model": "microsoft/resnet-18",
+   "workload_type": "vision_cls",
+   "batch_size": 1,
+   "resolution": 128
+  },
+  {
+   "condition_id": "resnet-18__b16__r512",
+   "model": "microsoft/resnet-18",
+   "workload_type": "vision_cls",
+   "batch_size": 16,
+   "resolution": 512
+  },
+  {
+   "condition_id": "resnet-18__b128__r512",
+   "model": "microsoft/resnet-18",
+   "workload_type": "vision_cls",
+   "batch_size": 128,
+   "resolution": 512
+  },
+  {
+   "condition_id": "resnet-50__b1__r128",
+   "model": "microsoft/resnet-50",
+   "workload_type": "vision_cls",
+   "batch_size": 1,
+   "resolution": 128
+  },
+  {
+   "condition_id": "resnet-50__b16__r512",
+   "model": "microsoft/resnet-50",
+   "workload_type": "vision_cls",
+   "batch_size": 16,
+   "resolution": 512
+  },
+  {
+   "condition_id": "resnet-50__b128__r512",
+   "model": "microsoft/resnet-50",
+   "workload_type": "vision_cls",
+   "batch_size": 128,
+   "resolution": 512
+  },
+  {
+   "condition_id": "mobilenet-v2-1.0-224__b1__r128",
+   "model": "google/mobilenet_v2_1.0_224",
+   "workload_type": "vision_cls",
+   "batch_size": 1,
+   "resolution": 128
+  },
+  {
+   "condition_id": "mobilenet-v2-1.0-224__b32__r256",
+   "model": "google/mobilenet_v2_1.0_224",
+   "workload_type": "vision_cls",
+   "batch_size": 32,
+   "resolution": 256
+  },
+  {
+   "condition_id": "mobilenet-v2-1.0-224__b128__r512",
+   "model": "google/mobilenet_v2_1.0_224",
+   "workload_type": "vision_cls",
+   "batch_size": 128,
+   "resolution": 512
+  },
+  {
+   "condition_id": "vit-large-patch16-224__b1__r224",
+   "model": "google/vit-large-patch16-224",
+   "workload_type": "vision_cls",
+   "batch_size": 1,
+   "resolution": 224
+  },
+  {
+   "condition_id": "vit-large-patch16-224__b32__r224",
+   "model": "google/vit-large-patch16-224",
+   "workload_type": "vision_cls",
+   "batch_size": 32,
+   "resolution": 224
+  },
+  {
+   "condition_id": "vit-large-patch16-224__b128__r224",
+   "model": "google/vit-large-patch16-224",
+   "workload_type": "vision_cls",
+   "batch_size": 128,
+   "resolution": 224
+  },
+  {
+   "condition_id": "t5-small__b1__in128__new128",
+   "model": "google-t5/t5-small",
+   "workload_type": "text_encdec",
+   "batch_size": 1,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "t5-small__b128__in256__new128",
+   "model": "google-t5/t5-small",
+   "workload_type": "text_encdec",
+   "batch_size": 128,
+   "input_len": 256,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "t5-small__b128__in128__new512",
+   "model": "google-t5/t5-small",
+   "workload_type": "text_encdec",
+   "batch_size": 128,
+   "input_len": 128,
+   "max_new_tokens": 512
+  },
+  {
+   "condition_id": "t5-base__b1__in128__new128",
+   "model": "google-t5/t5-base",
+   "workload_type": "text_encdec",
+   "batch_size": 1,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "t5-base__b128__in128__new128",
+   "model": "google-t5/t5-base",
+   "workload_type": "text_encdec",
+   "batch_size": 128,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "t5-base__b128__in512__new128",
+   "model": "google-t5/t5-base",
+   "workload_type": "text_encdec",
+   "batch_size": 128,
+   "input_len": 512,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "t5-3b__b1__in256__new128",
+   "model": "google-t5/t5-3b",
+   "workload_type": "text_encdec",
+   "batch_size": 1,
+   "input_len": 256,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "t5-3b__b32__in128__new128",
+   "model": "google-t5/t5-3b",
+   "workload_type": "text_encdec",
+   "batch_size": 32,
+   "input_len": 128,
+   "max_new_tokens": 128
+  },
+  {
+   "condition_id": "t5-3b__b16__in128__new256",
+   "model": "google-t5/t5-3b",
+   "workload_type": "text_encdec",
+   "batch_size": 16,
+   "input_len": 128,
+   "max_new_tokens": 256
+  }
+ ]
+}

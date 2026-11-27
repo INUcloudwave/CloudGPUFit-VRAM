@@ -1,0 +1,3 @@
+$ sh -c L=$(ldconfig -p | awk "/libcuda.so.1 /{print \$NF; exit}"); R=$(readlink -f "$L"); echo "libcuda=$L -> $R"; (dpkg -S "$R" 2>/dev/null || rpm -qf "$R" 2>/dev/null || echo "NOT OWNED BY ANY PACKAGE (runfile install?)")
+libcuda=/usr/lib/x86_64-linux-gnu/libcuda.so.1 -> /usr/lib/x86_64-linux-gnu/libcuda.so.595.112.07
+NOT OWNED BY ANY PACKAGE (runfile install?)

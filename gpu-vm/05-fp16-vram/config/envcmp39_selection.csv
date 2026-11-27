@@ -1,0 +1,40 @@
+model,tier,condition_id,batch,input_len,new_tokens,resolution,ref_peak_reserved_MiB,ref_peak_allocated_MiB,ref_wall_s,ref_retries,ref_validate,reason
+facebook/opt-125m,light,opt-125m__b1__in128__new128,1,128,128,,330.0,265.0,14.1,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+facebook/opt-125m,medium,opt-125m__b32__in256__new128,32,256,128,,1512.0,1346.3,16.0,0,ok,peak reserved closest to geometric mean of light/heavy (1848 MiB); no retry; wall <= 600s
+facebook/opt-125m,heavy,opt-125m__b128__in512__new256,128,512,256,,10352.0,8936.1,131.8,0,gpu_oom,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+TinyLlama/TinyLlama-1.1B-Chat-v1.0,light,tinyllama-1.1b-chat__b1__in128__new128,1,128,128,,2264.0,2117.1,43.3,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+TinyLlama/TinyLlama-1.1B-Chat-v1.0,medium,tinyllama-1.1b-chat__b32__in256__new512,32,256,512,,3782.0,2836.3,243.5,0,ok,peak reserved closest to geometric mean of light/heavy (4245 MiB); no retry; wall <= 600s
+TinyLlama/TinyLlama-1.1B-Chat-v1.0,heavy,tinyllama-1.1b-chat__b128__in512__new128,128,512,128,,7958.0,6669.3,274.3,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+Qwen/Qwen2.5-1.5B-Instruct,light,qwen2.5-1.5b-instruct__b1__in128__new128,1,128,128,,3452.0,2964.6,57.8,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+Qwen/Qwen2.5-1.5B-Instruct,medium,qwen2.5-1.5b-instruct__b128__in128__new256,128,128,256,,5492.0,4732.2,244.3,0,ok,peak reserved closest to geometric mean of light/heavy (5936 MiB); no retry; wall <= 600s
+Qwen/Qwen2.5-1.5B-Instruct,heavy,qwen2.5-1.5b-instruct__b128__in512__new256,128,512,256,,10206.0,8906.5,521.1,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+openai-community/gpt2,light,gpt2__b1__in128__new128,1,128,128,,488.0,279.7,17.1,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+openai-community/gpt2,medium,gpt2__b32__in128__new128,32,128,128,,1086.0,892.4,15.6,0,ok,peak reserved closest to geometric mean of light/heavy (1319 MiB); no retry; wall <= 600s
+openai-community/gpt2,heavy,gpt2__b128__in128__new128,128,128,128,,3564.0,2793.2,32.2,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+openai-community/gpt2-medium,light,gpt2-medium__b1__in512__new128,1,512,128,,1010.0,833.2,21.6,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+openai-community/gpt2-medium,medium,gpt2-medium__b16__in128__new512,16,128,512,,3106.0,1695.3,84.6,0,ok,peak reserved closest to geometric mean of light/heavy (3116 MiB); no retry; wall <= 600s
+openai-community/gpt2-medium,heavy,gpt2-medium__b32__in128__new512,32,128,512,,9612.0,2681.4,132.7,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+openai-community/gpt2-xl,light,gpt2-xl__b1__in512__new128,1,512,128,,3488.0,3303.8,38.5,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+openai-community/gpt2-xl,medium,gpt2-xl__b8__in128__new512,8,128,512,,5814.0,4565.0,158.9,0,ok,peak reserved closest to geometric mean of light/heavy (5657 MiB); no retry; wall <= 600s
+openai-community/gpt2-xl,heavy,gpt2-xl__b16__in512__new128,16,512,128,,9174.0,7439.4,94.7,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+microsoft/resnet-18,light,resnet-18__b1__r128,1,,,128,50.0,36.7,6.2,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+microsoft/resnet-18,medium,resnet-18__b16__r512,16,,,512,364.0,343.7,5.9,0,ok,peak reserved closest to geometric mean of light/heavy (357 MiB); no retry; wall <= 600s
+microsoft/resnet-18,heavy,resnet-18__b128__r512,128,,,512,2548.0,2527.7,9.1,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+microsoft/resnet-50,light,resnet-50__b1__r128,1,,,128,84.0,64.3,5.9,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+microsoft/resnet-50,medium,resnet-50__b16__r512,16,,,512,846.0,563.1,6.4,0,ok,peak reserved closest to geometric mean of light/heavy (720 MiB); no retry; wall <= 600s
+microsoft/resnet-50,heavy,resnet-50__b128__r512,128,,,512,6168.0,4091.1,15.3,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+google/mobilenet_v2_1.0_224,light,mobilenet-v2-1.0-224__b1__r128,1,,,128,28.0,16.9,5.7,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+google/mobilenet_v2_1.0_224,medium,mobilenet-v2-1.0-224__b32__r256,32,,,256,430.0,262.5,5.9,0,ok,peak reserved closest to geometric mean of light/heavy (429 MiB); no retry; wall <= 600s
+google/mobilenet_v2_1.0_224,heavy,mobilenet-v2-1.0-224__b128__r512,128,,,512,6580.0,3931.0,10.4,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+google/vit-large-patch16-224,light,vit-large-patch16-224__b1__r224,1,,,224,624.0,595.7,14.2,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+google/vit-large-patch16-224,medium,vit-large-patch16-224__b32__r224,32,,,224,844.0,760.3,8.1,0,ok,peak reserved closest to geometric mean of light/heavy (982 MiB); no retry; wall <= 600s
+google/vit-large-patch16-224,heavy,vit-large-patch16-224__b128__r224,128,,,224,1544.0,1272.3,13.3,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+google-t5/t5-small,light,t5-small__b1__in128__new128,1,128,128,,276.0,127.6,18.2,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+google-t5/t5-small,medium,t5-small__b128__in256__new128,128,256,128,,1444.0,1084.1,22.2,0,ok,peak reserved closest to geometric mean of light/heavy (1759 MiB); no retry; wall <= 600s
+google-t5/t5-small,heavy,t5-small__b128__in128__new512,128,128,512,,11214.0,1198.1,71.7,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+google-t5/t5-base,light,t5-base__b1__in128__new128,1,128,128,,688.0,444.3,32.8,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+google-t5/t5-base,medium,t5-base__b128__in128__new128,128,128,128,,2256.0,1699.0,34.4,0,ok,peak reserved closest to geometric mean of light/heavy (2275 MiB); no retry; wall <= 600s
+google-t5/t5-base,heavy,t5-base__b128__in512__new128,128,512,128,,7524.0,5619.3,90.1,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"
+google-t5/t5-3b,light,t5-3b__b1__in256__new128,1,256,128,,7222.0,5592.9,51.9,0,ok,"batch 1, smallest peak reserved among batch-1 ok conditions"
+google-t5/t5-3b,medium,t5-3b__b32__in128__new128,32,128,128,,9154.0,8569.2,85.3,0,ok,peak reserved closest to geometric mean of light/heavy (9032 MiB); no retry; wall <= 600s
+google-t5/t5-3b,heavy,t5-3b__b16__in128__new256,16,128,256,,11296.0,7792.3,113.7,0,ok,"largest peak reserved with no allocator retry, <= 85% of 14913 MiB, wall <= 600s"

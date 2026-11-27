@@ -1,0 +1,18 @@
+#!/bin/bash
+# 26-condition pilot (measure -> validate -> pass/fail check). Run inside tmux. Resumable (existing results skipped).
+#   bash aws/aws_03_pilot.sh <gpu_label e.g. aws-g6.xlarge> <HF_CACHE_DIR>
+set -uo pipefail
+COND=${CGF_CONDITIONS:-conditions_main395_l256.json}   # manifest inside config/ (2026-11-15: 1024 -> 256)
+LABEL=$1; CACHE=$(readlink -f "$2"); EXP=$(readlink -f "$(dirname "$0")/.."); cd "$EXP"; mkdir -p logs
+LOG=logs/pilot_${LABEL}.txt
+{
+echo PILOT_START $(date -Iseconds)
+for M in measure validate; do
+  python3 -I src/run_conditions.py --conditions "$COND" --list pilot --mode $M \
+      --gpu-label "$LABEL" --attn default --hf-cache "$CACHE" --image "${CGF_IMAGE_TAG:-cloudgpufit-bench:cu124-v1}" || { echo "RUNNER_ABORT $M"; exit 1; }
+done
+python3 -I tools/check_pilot.py "$EXP" "$LABEL" config/pilot.json --conditions "$COND"
+RC=$?
+[ $RC = 0 ] && date -Iseconds > "runs/$LABEL/PILOT_PASSED"
+echo PILOT_END rc=$RC $(date -Iseconds)
+} 2>&1 | tee -a "$LOG"

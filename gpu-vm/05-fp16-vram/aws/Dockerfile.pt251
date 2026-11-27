@@ -1,0 +1,11 @@
+# cloudgpufit-bench:pt251-cu124-v1 (2026-11-17) - environment C of the g4dn driver/PyTorch comparison.
+# FROM the exact A/B image (cloudgpufit-bench:cu124-v1, config sha256:e33dd4e4...) and ONLY swaps the PyTorch wheels
+# 2.6.0+cu124 -> 2.5.1+cu124 (torchvision/torchaudio to the matching builds, since 0.21/2.6 wheels do not load on torch 2.5.1).
+# pip resolves the rest from the same cu124 index; every package that changed is listed in /opt/pt251_pip_changes.txt.
+FROM cloudgpufit-bench:cu124-v1
+RUN python -m pip freeze > /opt/environment.lock.before_pt251.txt \
+ && python -m pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cu124 \
+      torch==2.5.1+cu124 torchvision==0.20.1+cu124 torchaudio==2.5.1+cu124 \
+ && python -m pip freeze > /opt/environment.lock.txt \
+ && (diff /opt/environment.lock.before_pt251.txt /opt/environment.lock.txt > /opt/pt251_pip_changes.txt || true)
+WORKDIR /work
