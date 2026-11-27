@@ -1,0 +1,257 @@
+diff --git a/cpu_tensor_trace.py b/cpu_tensor_trace.py
+index a626359..cd0b17d 100644
+--- a/cpu_tensor_trace.py
++++ b/cpu_tensor_trace.py
+@@ -5,10 +5,10 @@ estimator heuristics (gradient residency, optimiser state, copied iterations)
+ are deliberately not used for inference.
+ """
+ from __future__ import annotations
+-import json
+ from pathlib import Path
+ import tempfile
+ import uuid
++from inference_trace_runtime import phase, read_memory_events, simulate
+ 
+ 
+ REGION = "cloudgpufit_inference"
+@@ -37,9 +37,9 @@ def selected_lifetimes(events):
+     return selected,regions
+ 
+ 
+-def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memory_gb):
++def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memory_gb,
++                       *, trace_output=None, allocator_history=False):
+     import torch
+-    from perf_estimator.allocator import AllocatorSim
+     from perf_estimator.profiler import MemoryBlock, CpuInstantNode
+     from perf_estimator.config import Config
+ 
+@@ -74,21 +74,39 @@ def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memor
+             output=model(**inputs,use_cache=False)
+         del output
+ 
+-    model.eval()
+-    hook=model.register_forward_hook(observe_cache) if mode=='generate' else None
+-    try:
+-        with torch.inference_mode():
+-            invoke()  # The same one-request warmup as the shortened GPU benchmark.
+-            with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
+-                    profile_memory=True,record_shapes=False,with_stack=False) as profiler:
+-                for _ in range(3):
+-                    with torch.profiler.record_function(REGION):invoke()
+-    finally:
+-        if hook is not None:hook.remove()
++    def capture(trace):
++        # The profiler (including its native Kineto result) is local to this
++        # function and is no longer referenced when JSON parsing starts.
++        model.eval()
++        hook=model.register_forward_hook(observe_cache) if mode=='generate' else None
++        try:
++            with torch.inference_mode():
++                with phase('warmup'):
++                    invoke()
++                with phase('measured_inference_and_profiler_stop'):
++                    profiler = torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
++                            profile_memory=True,record_shapes=False,with_stack=False)
++                    profiler.start()
++                    try:
++                        with phase('measured_inference'):
++                            for _ in range(3):
++                                with torch.profiler.record_function(REGION):invoke()
++                    finally:
++                        with phase('profiler_stop'):
++                            profiler.stop()
++        finally:
++            if hook is not None:hook.remove()
++        with phase('trace_export'):
++            profiler.export_chrome_trace(str(trace))
++
+     with tempfile.TemporaryDirectory(prefix='xmem-inference-') as directory:
+-        trace=Path(directory)/'trace.json';profiler.export_chrome_trace(str(trace))
+-        events=json.loads(trace.read_text())['traceEvents']
+-    lifetimes,regions=selected_lifetimes(events)
++        trace=Path(trace_output) if trace_output else Path(directory)/'trace.json'
++        capture(trace)
++        with phase('trace_parse'):
++            events,total_events=read_memory_events(trace, REGION)
++    with phase('lifetime_matching'):
++        lifetimes,regions=selected_lifetimes(events)
++    del events
+     blocks=[]
+     for alloc,free in lifetimes:
+         block=MemoryBlock(CpuInstantNode(alloc))
+@@ -106,8 +124,9 @@ def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memor
+     for index,size in enumerate(weights+initial_inputs):
+         if size:blocks.append(resident(size,-index-1))
+     blocks.sort(key=lambda b:b.alloc_time)
+-    result=AllocatorSim(max_allocated_memory_gb=gpu_memory_gb,config=Config(save2tmp=True,run_id=uuid.uuid4().hex)).simulate(blocks)
+-    if result.oom:raise RuntimeError('xMem simulation reached its configured memory ceiling')
++    with phase('allocator_simulation'):
++        result=simulate(blocks,gpu_memory_gb,Config(save2tmp=True,run_id=uuid.uuid4().hex),
++                        record_history=allocator_history)
+     allocated=max(result._trace.max_usage_changes)
+     reserved=max(result._trace.max_segment_changes)
+     if allocated<sum(weights)+sum(initial_inputs):
+@@ -115,6 +134,8 @@ def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memor
+     return {'memory':{'tensor':allocated,'segment':reserved},'OOM':False,
+         'trace_summary':{'measured_invocations':3,'warmup_invocations':1,
+             **kv_max,
++            'total_profiler_events':total_events,
++            'allocator_history_recorded':allocator_history,
+             'tensor_lifetime_count':len(lifetimes),'resident_storage_bytes':sum(weights),
+             'input_storage_bytes':sum(initial_inputs),'cpu_device_only':True,
+             'method':'native_inference_lifetimes_into_xmem_allocator',
+diff --git a/orchestrator/cache_key.py b/orchestrator/cache_key.py
+index e7acab1..464dd0d 100644
+--- a/orchestrator/cache_key.py
++++ b/orchestrator/cache_key.py
+@@ -24,13 +24,13 @@ from typing import Any
+ # Bump by hand whenever predict_vram.py's output shape/semantics change in a
+ # way that should invalidate previously cached jobs.
+ # "2": remove the fixed 2 GiB margin; invalidate old result semantics.
+-VRAM_PREDICTOR_VERSION = "3-native-inference-outside-bd902817a45c2b20"
++VRAM_PREDICTOR_VERSION = "3.1-native-inference-summary-outside-bd902817a45c2b20"
+ 
+ 
+ def vram_code_fingerprint():
+     root=Path(__file__).resolve().parents[1]
+     return {name:hashlib.sha256((root/name).read_bytes()).hexdigest()
+-            for name in ["predict_vram.py","cpu_tensor_trace.py","vram_policy.py","gpu_overheads.json"]}
++            for name in ["predict_vram.py","cpu_tensor_trace.py","inference_trace_runtime.py","vram_policy.py","gpu_overheads.json"]}
+ 
+ # Bump by hand whenever runtime_adapter.py / instance_filter.py's own logic
+ # changes in a way that should invalidate previously cached jobs. This is
+diff --git a/orchestrator/setup_manager.py b/orchestrator/setup_manager.py
+index c0e7938..0f293a9 100644
+--- a/orchestrator/setup_manager.py
++++ b/orchestrator/setup_manager.py
+@@ -169,7 +169,7 @@ def _create_container() -> None:
+ 
+ def _sync_predictor() -> None:
+     """Atomically refresh the predictor in the bind-mounted xMem checkout."""
+-    for name in ("predict_vram.py", "cpu_tensor_trace.py", "vram_policy.py", "gpu_overheads.json"):
++    for name in ("predict_vram.py", "cpu_tensor_trace.py", "inference_trace_runtime.py", "vram_policy.py", "gpu_overheads.json"):
+         _sync_file(name)
+ 
+ 
+diff --git a/predict_vram.py b/predict_vram.py
+index 33ec143..6a18114 100644
+--- a/predict_vram.py
++++ b/predict_vram.py
+@@ -16,6 +16,8 @@ import json
+ import sys
+ import time
+ import warnings
++import traceback
++from inference_trace_runtime import phase
+ 
+ from vram_policy import memory_result, VERSION
+ 
+@@ -211,12 +213,13 @@ def run(args):
+         raise ValueError("max_new_tokens must be positive")
+ 
+     workload_type = getattr(args, "workload_type", None)
+-    model, kind, hf_cfg = load_model(
+-        args.model,
+-        getattr(args, "model_config", None),
+-        workload_type,
+-        args.dtype,
+-    )
++    with phase('model_initialization'):
++        model, kind, hf_cfg = load_model(
++            args.model,
++            getattr(args, "model_config", None),
++            workload_type,
++            args.dtype,
++        )
+     pb = param_bytes(model)
+ 
+     resolution = args.resolution
+@@ -262,7 +265,9 @@ def run(args):
+     inputs = example_batch if isinstance(example_batch, dict) else {"pixel_values":example_batch[0]}
+     actual_input_shapes = {key:list(value.shape) for key,value in inputs.items()}
+     from cpu_tensor_trace import trace_and_estimate
+-    raw = trace_and_estimate(model, inputs, args.mode, args.max_new_tokens, storage_sizes, args.gpu_memory_gb)
++    raw = trace_and_estimate(model, inputs, args.mode, args.max_new_tokens, storage_sizes, args.gpu_memory_gb,
++                             trace_output=getattr(args, 'trace_output', None),
++                             allocator_history=getattr(args, 'allocator_history', False))
+ 
+     accounting = memory_result(raw["memory"]["tensor"], raw["memory"]["segment"],
+                                args.dtype, getattr(args,"gpu_name",None))
+@@ -310,6 +315,8 @@ def main():
+     p.add_argument("--mode", choices=["prefill", "generate"], default="prefill")
+     p.add_argument("--max_new_tokens", type=int, default=256)
+     p.add_argument("--gpu_memory_gb", type=float, default=80)
++    p.add_argument("--trace_output", help="Optional full Chrome trace path for equivalence checks; may be large")
++    p.add_argument("--allocator_history", action="store_true", help="Keep upstream visualization history for debugging")
+     a = p.parse_args()
+ 
+     if a.json:
+@@ -322,7 +329,9 @@ def main():
+     try:
+         result = run(a)
+     except Exception as e:
++        import inference_trace_runtime
+         result = {"status": "error", "error": f"{type(e).__name__}: {e}",
++                  "stage": inference_trace_runtime.LAST_PHASE, "traceback": traceback.format_exc(),
+                   "input": {"model": a.model, "batch_size": a.batch_size}}
+     print(json.dumps(result, indent=2, ensure_ascii=False))
+     sys.exit(0 if result["status"] == "ok" else 1)
+diff --git a/tests/test_vram_prediction.py b/tests/test_vram_prediction.py
+index 2a156dc..a66ee62 100644
+--- a/tests/test_vram_prediction.py
++++ b/tests/test_vram_prediction.py
+@@ -66,7 +66,7 @@ class DeploymentRegressionTests(unittest.TestCase):
+             repo.mkdir()
+             (work / "xMem").mkdir(parents=True)
+             (repo / "predict_vram.py").write_bytes(b"new-predictor")
+-            for name in ["cpu_tensor_trace.py", "vram_policy.py", "gpu_overheads.json"]:
++            for name in ["cpu_tensor_trace.py", "inference_trace_runtime.py", "vram_policy.py", "gpu_overheads.json"]:
+                 (repo / name).write_bytes(b"new-helper")
+             target = work / "xMem" / "predict_vram.py"
+             target.write_bytes(b"old-predictor")
+@@ -90,7 +90,7 @@ class DeploymentRegressionTests(unittest.TestCase):
+             repo.mkdir()
+             (work / "xMem").mkdir(parents=True)
+             (repo / "predict_vram.py").write_bytes(b"same-predictor")
+-            for name in ["cpu_tensor_trace.py", "vram_policy.py", "gpu_overheads.json"]:
++            for name in ["cpu_tensor_trace.py", "inference_trace_runtime.py", "vram_policy.py", "gpu_overheads.json"]:
+                 (repo / name).write_bytes(b"same-helper")
+                 (work / "xMem" / name).write_bytes(b"same-helper")
+             target = work / "xMem" / "predict_vram.py"
+diff --git a/tools/run_prediction_suite.py b/tools/run_prediction_suite.py
+index ddcab97..9c503a0 100644
+--- a/tools/run_prediction_suite.py
++++ b/tools/run_prediction_suite.py
+@@ -87,13 +87,17 @@ def main():
+     p.add_argument('--ram-budget-gb',type=int,default=36,help='Approximate concurrent RAM reservations; not a hard memory limit')
+     p.add_argument('--prepare',action='store_true',help='Update existing CPU container with validated patches; keep image and dependencies')
+     p.add_argument('--preflight-only',action='store_true')
++    p.add_argument('--allow-unbounded-legacy-run',action='store_true',
++                   help='Explicitly opt into the old shared-container runner without a hard RAM limit')
+     a=p.parse_args()
++    if not a.preflight_only and not a.allow_unbounded_legacy_run:
++        p.error('The legacy runner caused host OOMs. Use tools/run_prediction_recovery.py with a new output directory.')
+     if a.threads<1 or a.jobs<1:p.error('threads and jobs must be positive')
+     out=a.output_root.resolve();out.mkdir(parents=True,exist_ok=True)
+     lock=(out/'prediction.lock').open('a')
+     fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+     plan=json.loads(a.plan.read_text());pins=json.loads(a.revisions.read_text());cases=select_cases(plan,a.case_set)
+-    sources=['predict_vram.py','cpu_tensor_trace.py','vram_policy.py','gpu_overheads.json']
++    sources=['predict_vram.py','cpu_tensor_trace.py','inference_trace_runtime.py','vram_policy.py','gpu_overheads.json']
+     identity={name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in sources}
+     identity.update(plan=hashlib.sha256(a.plan.read_bytes()).hexdigest(),revisions=hashlib.sha256(a.revisions.read_bytes()).hexdigest(),threads=a.threads)
+     manifest_path=out/'manifest.json'
+diff --git a/vram_policy.py b/vram_policy.py
+index 3aa04f9..31ed2f7 100644
+--- a/vram_policy.py
++++ b/vram_policy.py
+@@ -5,7 +5,7 @@ import json
+ import math
+ from pathlib import Path
+ 
+-VERSION = "3-native-inference"
++VERSION = "3.1-native-inference-summary"
+ PROFILE_PATH = Path(__file__).with_name("gpu_overheads.json")
+ ALIASES = {"Tesla T4": "NVIDIA T4", "T4": "NVIDIA T4", "A10G": "NVIDIA A10G",
+            "L4": "NVIDIA L4", "L40S": "NVIDIA L40S"}

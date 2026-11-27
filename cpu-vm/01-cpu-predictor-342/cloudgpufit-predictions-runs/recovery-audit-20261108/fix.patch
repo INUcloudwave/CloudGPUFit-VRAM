@@ -1,0 +1,1323 @@
+diff --git a/cpu_tensor_trace.py b/cpu_tensor_trace.py
+index a626359..cd0b17d 100644
+--- a/cpu_tensor_trace.py
++++ b/cpu_tensor_trace.py
+@@ -5,10 +5,10 @@ estimator heuristics (gradient residency, optimiser state, copied iterations)
+ are deliberately not used for inference.
+ """
+ from __future__ import annotations
+-import json
+ from pathlib import Path
+ import tempfile
+ import uuid
++from inference_trace_runtime import phase, read_memory_events, simulate
+ 
+ 
+ REGION = "cloudgpufit_inference"
+@@ -37,9 +37,9 @@ def selected_lifetimes(events):
+     return selected,regions
+ 
+ 
+-def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memory_gb):
++def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memory_gb,
++                       *, trace_output=None, allocator_history=False):
+     import torch
+-    from perf_estimator.allocator import AllocatorSim
+     from perf_estimator.profiler import MemoryBlock, CpuInstantNode
+     from perf_estimator.config import Config
+ 
+@@ -74,21 +74,39 @@ def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memor
+             output=model(**inputs,use_cache=False)
+         del output
+ 
+-    model.eval()
+-    hook=model.register_forward_hook(observe_cache) if mode=='generate' else None
+-    try:
+-        with torch.inference_mode():
+-            invoke()  # The same one-request warmup as the shortened GPU benchmark.
+-            with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
+-                    profile_memory=True,record_shapes=False,with_stack=False) as profiler:
+-                for _ in range(3):
+-                    with torch.profiler.record_function(REGION):invoke()
+-    finally:
+-        if hook is not None:hook.remove()
++    def capture(trace):
++        # The profiler (including its native Kineto result) is local to this
++        # function and is no longer referenced when JSON parsing starts.
++        model.eval()
++        hook=model.register_forward_hook(observe_cache) if mode=='generate' else None
++        try:
++            with torch.inference_mode():
++                with phase('warmup'):
++                    invoke()
++                with phase('measured_inference_and_profiler_stop'):
++                    profiler = torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
++                            profile_memory=True,record_shapes=False,with_stack=False)
++                    profiler.start()
++                    try:
++                        with phase('measured_inference'):
++                            for _ in range(3):
++                                with torch.profiler.record_function(REGION):invoke()
++                    finally:
++                        with phase('profiler_stop'):
++                            profiler.stop()
++        finally:
++            if hook is not None:hook.remove()
++        with phase('trace_export'):
++            profiler.export_chrome_trace(str(trace))
++
+     with tempfile.TemporaryDirectory(prefix='xmem-inference-') as directory:
+-        trace=Path(directory)/'trace.json';profiler.export_chrome_trace(str(trace))
+-        events=json.loads(trace.read_text())['traceEvents']
+-    lifetimes,regions=selected_lifetimes(events)
++        trace=Path(trace_output) if trace_output else Path(directory)/'trace.json'
++        capture(trace)
++        with phase('trace_parse'):
++            events,total_events=read_memory_events(trace, REGION)
++    with phase('lifetime_matching'):
++        lifetimes,regions=selected_lifetimes(events)
++    del events
+     blocks=[]
+     for alloc,free in lifetimes:
+         block=MemoryBlock(CpuInstantNode(alloc))
+@@ -106,8 +124,9 @@ def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memor
+     for index,size in enumerate(weights+initial_inputs):
+         if size:blocks.append(resident(size,-index-1))
+     blocks.sort(key=lambda b:b.alloc_time)
+-    result=AllocatorSim(max_allocated_memory_gb=gpu_memory_gb,config=Config(save2tmp=True,run_id=uuid.uuid4().hex)).simulate(blocks)
+-    if result.oom:raise RuntimeError('xMem simulation reached its configured memory ceiling')
++    with phase('allocator_simulation'):
++        result=simulate(blocks,gpu_memory_gb,Config(save2tmp=True,run_id=uuid.uuid4().hex),
++                        record_history=allocator_history)
+     allocated=max(result._trace.max_usage_changes)
+     reserved=max(result._trace.max_segment_changes)
+     if allocated<sum(weights)+sum(initial_inputs):
+@@ -115,6 +134,8 @@ def trace_and_estimate(model, inputs, mode, new_tokens, storage_sizes, gpu_memor
+     return {'memory':{'tensor':allocated,'segment':reserved},'OOM':False,
+         'trace_summary':{'measured_invocations':3,'warmup_invocations':1,
+             **kv_max,
++            'total_profiler_events':total_events,
++            'allocator_history_recorded':allocator_history,
+             'tensor_lifetime_count':len(lifetimes),'resident_storage_bytes':sum(weights),
+             'input_storage_bytes':sum(initial_inputs),'cpu_device_only':True,
+             'method':'native_inference_lifetimes_into_xmem_allocator',
+diff --git a/orchestrator/cache_key.py b/orchestrator/cache_key.py
+index e7acab1..464dd0d 100644
+--- a/orchestrator/cache_key.py
++++ b/orchestrator/cache_key.py
+@@ -24,13 +24,13 @@ from typing import Any
+ # Bump by hand whenever predict_vram.py's output shape/semantics change in a
+ # way that should invalidate previously cached jobs.
+ # "2": remove the fixed 2 GiB margin; invalidate old result semantics.
+-VRAM_PREDICTOR_VERSION = "3-native-inference-outside-bd902817a45c2b20"
++VRAM_PREDICTOR_VERSION = "3.1-native-inference-summary-outside-bd902817a45c2b20"
+ 
+ 
+ def vram_code_fingerprint():
+     root=Path(__file__).resolve().parents[1]
+     return {name:hashlib.sha256((root/name).read_bytes()).hexdigest()
+-            for name in ["predict_vram.py","cpu_tensor_trace.py","vram_policy.py","gpu_overheads.json"]}
++            for name in ["predict_vram.py","cpu_tensor_trace.py","inference_trace_runtime.py","vram_policy.py","gpu_overheads.json"]}
+ 
+ # Bump by hand whenever runtime_adapter.py / instance_filter.py's own logic
+ # changes in a way that should invalidate previously cached jobs. This is
+diff --git a/orchestrator/setup_manager.py b/orchestrator/setup_manager.py
+index c0e7938..0f293a9 100644
+--- a/orchestrator/setup_manager.py
++++ b/orchestrator/setup_manager.py
+@@ -169,7 +169,7 @@ def _create_container() -> None:
+ 
+ def _sync_predictor() -> None:
+     """Atomically refresh the predictor in the bind-mounted xMem checkout."""
+-    for name in ("predict_vram.py", "cpu_tensor_trace.py", "vram_policy.py", "gpu_overheads.json"):
++    for name in ("predict_vram.py", "cpu_tensor_trace.py", "inference_trace_runtime.py", "vram_policy.py", "gpu_overheads.json"):
+         _sync_file(name)
+ 
+ 
+diff --git a/predict_vram.py b/predict_vram.py
+index 33ec143..6a18114 100644
+--- a/predict_vram.py
++++ b/predict_vram.py
+@@ -16,6 +16,8 @@ import json
+ import sys
+ import time
+ import warnings
++import traceback
++from inference_trace_runtime import phase
+ 
+ from vram_policy import memory_result, VERSION
+ 
+@@ -211,12 +213,13 @@ def run(args):
+         raise ValueError("max_new_tokens must be positive")
+ 
+     workload_type = getattr(args, "workload_type", None)
+-    model, kind, hf_cfg = load_model(
+-        args.model,
+-        getattr(args, "model_config", None),
+-        workload_type,
+-        args.dtype,
+-    )
++    with phase('model_initialization'):
++        model, kind, hf_cfg = load_model(
++            args.model,
++            getattr(args, "model_config", None),
++            workload_type,
++            args.dtype,
++        )
+     pb = param_bytes(model)
+ 
+     resolution = args.resolution
+@@ -262,7 +265,9 @@ def run(args):
+     inputs = example_batch if isinstance(example_batch, dict) else {"pixel_values":example_batch[0]}
+     actual_input_shapes = {key:list(value.shape) for key,value in inputs.items()}
+     from cpu_tensor_trace import trace_and_estimate
+-    raw = trace_and_estimate(model, inputs, args.mode, args.max_new_tokens, storage_sizes, args.gpu_memory_gb)
++    raw = trace_and_estimate(model, inputs, args.mode, args.max_new_tokens, storage_sizes, args.gpu_memory_gb,
++                             trace_output=getattr(args, 'trace_output', None),
++                             allocator_history=getattr(args, 'allocator_history', False))
+ 
+     accounting = memory_result(raw["memory"]["tensor"], raw["memory"]["segment"],
+                                args.dtype, getattr(args,"gpu_name",None))
+@@ -310,6 +315,8 @@ def main():
+     p.add_argument("--mode", choices=["prefill", "generate"], default="prefill")
+     p.add_argument("--max_new_tokens", type=int, default=256)
+     p.add_argument("--gpu_memory_gb", type=float, default=80)
++    p.add_argument("--trace_output", help="Optional full Chrome trace path for equivalence checks; may be large")
++    p.add_argument("--allocator_history", action="store_true", help="Keep upstream visualization history for debugging")
+     a = p.parse_args()
+ 
+     if a.json:
+@@ -322,7 +329,9 @@ def main():
+     try:
+         result = run(a)
+     except Exception as e:
++        import inference_trace_runtime
+         result = {"status": "error", "error": f"{type(e).__name__}: {e}",
++                  "stage": inference_trace_runtime.LAST_PHASE, "traceback": traceback.format_exc(),
+                   "input": {"model": a.model, "batch_size": a.batch_size}}
+     print(json.dumps(result, indent=2, ensure_ascii=False))
+     sys.exit(0 if result["status"] == "ok" else 1)
+diff --git a/tests/test_vram_prediction.py b/tests/test_vram_prediction.py
+index 2a156dc..a66ee62 100644
+--- a/tests/test_vram_prediction.py
++++ b/tests/test_vram_prediction.py
+@@ -66,7 +66,7 @@ class DeploymentRegressionTests(unittest.TestCase):
+             repo.mkdir()
+             (work / "xMem").mkdir(parents=True)
+             (repo / "predict_vram.py").write_bytes(b"new-predictor")
+-            for name in ["cpu_tensor_trace.py", "vram_policy.py", "gpu_overheads.json"]:
++            for name in ["cpu_tensor_trace.py", "inference_trace_runtime.py", "vram_policy.py", "gpu_overheads.json"]:
+                 (repo / name).write_bytes(b"new-helper")
+             target = work / "xMem" / "predict_vram.py"
+             target.write_bytes(b"old-predictor")
+@@ -90,7 +90,7 @@ class DeploymentRegressionTests(unittest.TestCase):
+             repo.mkdir()
+             (work / "xMem").mkdir(parents=True)
+             (repo / "predict_vram.py").write_bytes(b"same-predictor")
+-            for name in ["cpu_tensor_trace.py", "vram_policy.py", "gpu_overheads.json"]:
++            for name in ["cpu_tensor_trace.py", "inference_trace_runtime.py", "vram_policy.py", "gpu_overheads.json"]:
+                 (repo / name).write_bytes(b"same-helper")
+                 (work / "xMem" / name).write_bytes(b"same-helper")
+             target = work / "xMem" / "predict_vram.py"
+diff --git a/tools/run_prediction_suite.py b/tools/run_prediction_suite.py
+index ddcab97..9c503a0 100644
+--- a/tools/run_prediction_suite.py
++++ b/tools/run_prediction_suite.py
+@@ -87,13 +87,17 @@ def main():
+     p.add_argument('--ram-budget-gb',type=int,default=36,help='Approximate concurrent RAM reservations; not a hard memory limit')
+     p.add_argument('--prepare',action='store_true',help='Update existing CPU container with validated patches; keep image and dependencies')
+     p.add_argument('--preflight-only',action='store_true')
++    p.add_argument('--allow-unbounded-legacy-run',action='store_true',
++                   help='Explicitly opt into the old shared-container runner without a hard RAM limit')
+     a=p.parse_args()
++    if not a.preflight_only and not a.allow_unbounded_legacy_run:
++        p.error('The legacy runner caused host OOMs. Use tools/run_prediction_recovery.py with a new output directory.')
+     if a.threads<1 or a.jobs<1:p.error('threads and jobs must be positive')
+     out=a.output_root.resolve();out.mkdir(parents=True,exist_ok=True)
+     lock=(out/'prediction.lock').open('a')
+     fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+     plan=json.loads(a.plan.read_text());pins=json.loads(a.revisions.read_text());cases=select_cases(plan,a.case_set)
+-    sources=['predict_vram.py','cpu_tensor_trace.py','vram_policy.py','gpu_overheads.json']
++    sources=['predict_vram.py','cpu_tensor_trace.py','inference_trace_runtime.py','vram_policy.py','gpu_overheads.json']
+     identity={name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in sources}
+     identity.update(plan=hashlib.sha256(a.plan.read_bytes()).hexdigest(),revisions=hashlib.sha256(a.revisions.read_bytes()).hexdigest(),threads=a.threads)
+     manifest_path=out/'manifest.json'
+diff --git a/vram_policy.py b/vram_policy.py
+index 3aa04f9..31ed2f7 100644
+--- a/vram_policy.py
++++ b/vram_policy.py
+@@ -5,7 +5,7 @@ import json
+ import math
+ from pathlib import Path
+ 
+-VERSION = "3-native-inference"
++VERSION = "3.1-native-inference-summary"
+ PROFILE_PATH = Path(__file__).with_name("gpu_overheads.json")
+ ALIASES = {"Tesla T4": "NVIDIA T4", "T4": "NVIDIA T4", "A10G": "NVIDIA A10G",
+            "L4": "NVIDIA L4", "L40S": "NVIDIA L40S"}
+diff --git a/inference_trace_runtime.py b/inference_trace_runtime.py
+new file mode 100644
+index 0000000..ab3e58f
+--- /dev/null
++++ b/inference_trace_runtime.py
+@@ -0,0 +1,193 @@
++"""Bounded JSON reading, phase diagnostics and optional xMem history suppression.
++
++Allocator transitions and byte counters remain the pinned upstream implementation.
++No global monkey patches or new runtime dependencies are used.
++"""
++from contextlib import contextmanager
++import json
++from pathlib import Path
++import resource
++import sys
++import time
++import os
++
++
++LAST_PHASE = None
++
++
++def resource_snapshot():
++    result = {"pid": os.getpid(), "max_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024}
++    try:
++        for line in Path('/proc/self/status').read_text().splitlines():
++            if line.startswith('VmRSS:'):
++                result['rss_bytes'] = int(line.split()[1]) * 1024
++    except OSError:
++        pass
++    for filename in ('memory.current', 'memory.peak'):
++        try:
++            result['cgroup_' + filename.replace('.', '_') + '_bytes'] = int((Path('/sys/fs/cgroup') / filename).read_text())
++        except (OSError, ValueError):
++            pass
++    return result
++
++
++def progress(event, **fields):
++    print('CGF_PROGRESS ' + json.dumps({"event": event, "unix_time": time.time(), **resource_snapshot(), **fields}),
++          file=sys.stderr, flush=True)
++
++
++@contextmanager
++def phase(name):
++    global LAST_PHASE
++    LAST_PHASE = name
++    start = time.monotonic()
++    progress('phase_start', phase=name)
++    try:
++        yield
++    except BaseException as exc:
++        progress('phase_error', phase=name, elapsed_seconds=time.monotonic()-start, exception_type=type(exc).__name__)
++        raise
++    else:
++        progress('phase_end', phase=name, elapsed_seconds=time.monotonic()-start)
++
++
++class _JSONStream:
++    def __init__(self, source, chunk_size):
++        self.source, self.chunk_size = source, chunk_size
++        self.buffer, self.pos, self.eof = '', 0, False
++        self.decoder = json.JSONDecoder()
++
++    def more(self):
++        self.buffer = self.buffer[self.pos:]
++        self.pos = 0
++        chunk = self.source.read(self.chunk_size)
++        self.eof = not chunk
++        self.buffer += chunk
++
++    def peek(self):
++        while True:
++            while self.pos < len(self.buffer) and self.buffer[self.pos].isspace():
++                self.pos += 1
++            if self.pos < len(self.buffer):
++                return self.buffer[self.pos]
++            if self.eof:
++                return ''
++            self.more()
++
++    def expect(self, char):
++        if self.peek() != char:
++            raise ValueError(f'Invalid Chrome trace JSON: expected {char!r}')
++        self.pos += 1
++
++    def value(self):
++        self.peek()
++        while True:
++            try:
++                value, end = self.decoder.raw_decode(self.buffer, self.pos)
++                # Do not accept a partial scalar at a chunk boundary.
++                if end == len(self.buffer) and not self.eof:
++                    self.more()
++                    continue
++                self.pos = end
++                return value
++            except json.JSONDecodeError:
++                if self.eof:
++                    raise ValueError('Truncated or malformed Chrome trace JSON') from None
++                self.more()
++
++
++def iter_trace_events(path, chunk_size=65536):
++    """Yield traceEvents in file order; metadata is not mistaken for events."""
++    if chunk_size < 1:
++        raise ValueError('chunk_size must be positive')
++    with Path(path).open(encoding='utf-8') as source:
++        reader = _JSONStream(source, chunk_size)
++        reader.expect('{')
++        found = False
++        if reader.peek() != '}':
++            while True:
++                key = reader.value()
++                if not isinstance(key, str):
++                    raise ValueError('Chrome trace object key must be a string')
++                reader.expect(':')
++                if key == 'traceEvents':
++                    if found:
++                        raise ValueError('Duplicate traceEvents array')
++                    found = True
++                    reader.expect('[')
++                    if reader.peek() != ']':
++                        while True:
++                            event = reader.value()
++                            if not isinstance(event, dict):
++                                raise ValueError('Chrome trace event must be an object')
++                            yield event
++                            if reader.peek() != ',':
++                                break
++                            reader.expect(',')
++                    reader.expect(']')
++                else:
++                    reader.value()
++                if reader.peek() != ',':
++                    break
++                reader.expect(',')
++        reader.expect('}')
++        if reader.peek():
++            raise ValueError('Trailing data in Chrome trace JSON')
++        if not found:
++            raise ValueError('Chrome trace has no traceEvents array')
++
++
++def read_memory_events(path, region):
++    selected, total = [], 0
++    for event in iter_trace_events(path):
++        total += 1
++        if event.get('name') == region and event.get('cat') == 'user_annotation':
++            selected.append(event)
++        elif event.get('name') == '[memory]' and event.get('cat') == 'cpu_instant_event':
++            args = event.get('args', {})
++            if args.get('Device Type') == 0 and args.get('Bytes', 0) != 0:
++                selected.append(event)
++    return selected, total
++
++
++def simulate(blocks, gpu_memory_gb, config, *, record_history=False):
++    from perf_estimator.allocator import AllocatorSim
++    from perf_estimator.allocator.allocator import CachingAllocator, Trace
++
++    class SummaryTrace(Trace):
++        def _record(self, block, action, use_size=True):
++            # Keep inherited segment/usage counters and all allocator transitions.
++            # Only visualization/debug snapshots and formatted messages are omitted.
++            pass
++
++    class ReportingAllocator(CachingAllocator):
++        failure = None
++
++        def malloc(self, *args, **kwargs):
++            try:
++                return super().malloc(*args, **kwargs)
++            except Exception as exc:
++                self.failure = exc
++                raise
++
++        def free(self, *args, **kwargs):
++            try:
++                return super().free(*args, **kwargs)
++            except Exception as exc:
++                self.failure = exc
++                raise
++
++    simulator = AllocatorSim(max_allocated_memory_gb=gpu_memory_gb, config=config)
++    allocator = ReportingAllocator(allowed_memory_maximum=simulator._allocator.allowed_memory_maximum)
++    if not record_history:
++        allocator._trace = SummaryTrace(allocator._segments)
++    simulator._allocator = allocator
++    result = simulator.simulate(blocks)
++    if result.oom:
++        failure = result.failure
++        if isinstance(failure, MemoryError) and str(failure).startswith('OOM when allocating '):
++            raise RuntimeError('simulated_gpu_capacity_exceeded: ' + str(failure)) from failure
++        if failure is not None:
++            raise RuntimeError(f'allocator_simulation_failed: {type(failure).__name__}: {failure}') from failure
++        raise RuntimeError('allocator_simulation_failed: upstream simulator rejected an event; not a confirmed capacity OOM')
++    return result
+diff --git a/tools/run_prediction_recovery.py b/tools/run_prediction_recovery.py
+new file mode 100644
+index 0000000..d0f76f1
+--- /dev/null
++++ b/tools/run_prediction_recovery.py
+@@ -0,0 +1,342 @@
++#!/usr/bin/env python3
++"""Run selected CPU predictions sequentially in disposable, memory-limited containers.
++
++The prepared xmem-cpu environment is snapshotted locally. Its mounted source and
++all old results remain untouched. Each invocation requires a fresh output path.
++"""
++from __future__ import annotations
++import argparse
++import fcntl
++import hashlib
++import json
++import os
++from pathlib import Path
++import signal
++import subprocess
++import sys
++import time
++import uuid
++
++from run_prediction_suite import ROOT, CONFIG, prediction_json, request, save, select_cases
++
++SOURCES = ('predict_vram.py', 'cpu_tensor_trace.py', 'inference_trace_runtime.py',
++           'vram_policy.py', 'gpu_overheads.json')
++GIB = 1024 ** 3
++
++
++def docker(*args, **kwargs):
++    return subprocess.run(['docker', *args], check=True, text=True, encoding='utf-8',
++                          errors='replace', capture_output=True, **kwargs)
++
++
++def available_bytes():
++    for line in Path('/proc/meminfo').read_text().splitlines():
++        if line.startswith('MemAvailable:'):
++            return int(line.split()[1]) * 1024
++    raise RuntimeError('Cannot determine host MemAvailable')
++
++
++def last_phase(log):
++    result = None
++    with Path(log).open(errors='replace') as source:
++        for line in source:
++            if line.startswith('CGF_PROGRESS '):
++                try:
++                    result = json.loads(line[len('CGF_PROGRESS '):]).get('phase', result)
++                except ValueError:
++                    pass
++    return result
++
++
++def classify(exit_code, state, log, *, timed_out=False, cancelled=False):
++    """Return process evidence even when no predictor JSON was emitted."""
++    result = {'status': 'error', 'exit_code': exit_code,
++              'container_exit_code': state.get('ExitCode'),
++              'oom_killed': bool(state.get('OOMKilled')), 'stage': last_phase(log)}
++    if cancelled:
++        result.update(error_kind='cancelled', error='Prediction cancelled; job container stopped')
++    elif timed_out:
++        result.update(error_kind='timeout', error='Prediction exceeded configured timeout')
++    elif result['oom_killed']:
++        result.update(error_kind='cgroup_oom', error='Job container exceeded its memory limit')
++    else:
++        try:
++            parsed = prediction_json(Path(log).read_text(errors='replace'))
++        except ValueError:
++            result.update(error_kind='missing_prediction_json' if exit_code == 0 else 'process_exit_without_json',
++                          error=f'Predictor JSON missing; docker exit={exit_code}; OOMKilled={result["oom_killed"]}')
++        else:
++            result.update(parsed)
++            # Runtime evidence is authoritative even if a stale/misleading JSON says ok.
++            result.update(exit_code=exit_code, container_exit_code=state.get('ExitCode'),
++                          oom_killed=bool(state.get('OOMKilled')))
++            if exit_code or state.get('ExitCode', 0):
++                result.update(status='error', error_kind='process_exit',
++                              error=parsed.get('error', f'Predictor process exited unsuccessfully: {exit_code}'))
++            elif parsed['status'] != 'ok':
++                result['error_kind'] = 'predictor_error'
++    return result
++
++
++def stop_job(name):
++    try:
++        docker('stop', '--time', '3', name, timeout=10)
++    except (subprocess.SubprocessError, OSError):
++        # Only the uniquely named container created for this attempt is removed.
++        docker('kill', name, timeout=15)
++
++
++def run_job(name, command, payload, log, timeout):
++    """The container PID 1 is the predictor, so Docker can attribute OOM kills."""
++    proc = None
++    timed_out = cancelled = False
++    state = {}
++    created = False
++    try:
++        docker('create', '--name', name, *command, timeout=30)
++        created = True
++        info = json.loads(docker('inspect', name, timeout=15).stdout)[0]
++        metadata = {'container_id': info['Id'], 'container_name': name,
++                    'memory_limit_bytes': info['HostConfig']['Memory'],
++                    'memory_swap_bytes': info['HostConfig']['MemorySwap'], 'mounts': info['Mounts'],
++                    'nano_cpus': info['HostConfig'].get('NanoCpus'),
++                    'network_mode': info['HostConfig'].get('NetworkMode')}
++        with Path(log).open('x') as output:
++            proc = subprocess.Popen(['docker', 'start', '-a', '-i', name], stdin=subprocess.PIPE,
++                                    stdout=output, stderr=subprocess.STDOUT, text=True)
++            try:
++                for _ in range(20):
++                    active = json.loads(docker('inspect', '--format', '{{json .State}}', name, timeout=15).stdout)
++                    host_pid = active.get('Pid', 0)
++                    if host_pid:
++                        metadata['host_pid'] = host_pid
++                        try:
++                            metadata['host_cgroup'] = Path(f'/proc/{host_pid}/cgroup').read_text()
++                        except OSError:
++                            pass
++                        break
++                    if 'Running' not in active or proc.poll() is not None:
++                        break
++                    time.sleep(0.05)
++                proc.communicate(json.dumps(payload), timeout=timeout)
++            except subprocess.TimeoutExpired:
++                timed_out = True
++                stop_job(name)
++            except KeyboardInterrupt:
++                cancelled = True
++                stop_job(name)
++            finally:
++                if proc.poll() is None:
++                    try:
++                        proc.communicate(timeout=10)
++                    except subprocess.TimeoutExpired:
++                        proc.kill()
++                        proc.wait(timeout=10)
++        state = json.loads(docker('inspect', '--format', '{{json .State}}', name, timeout=15).stdout)
++        result = classify(proc.returncode, state, log, timed_out=timed_out, cancelled=cancelled)
++        result.update(container=metadata, container_state=state)
++        return result
++    finally:
++        # Also cover errors while inspecting or starting the Docker CLI.
++        try:
++            if created:
++                docker('rm', '-f', name, timeout=15)
++        finally:
++            if proc is not None and proc.poll() is None:
++                proc.kill()
++                proc.wait(timeout=10)
++
++
++def job_command(image, work, cache, memory_bytes, threads):
++    args = ['-i', '--entrypoint', 'python', '--network', 'none', '--memory', str(memory_bytes),
++            '--memory-swap', str(memory_bytes), '--cpus', str(threads),
++            '--mount', f'type=bind,src={work},dst=/work,readonly',
++            '--mount', f'type=bind,src={cache},dst=/root/.cache/huggingface,readonly']
++    # A separate directory avoids creating missing mountpoints under read-only /work.
++    args += ['--mount', f'type=bind,src={ROOT},dst=/recovery,readonly']
++    for value in (f'OMP_NUM_THREADS={threads}', f'MKL_NUM_THREADS={threads}',
++                  'OPENBLAS_NUM_THREADS=1', 'PYTHONDONTWRITEBYTECODE=1', 'HF_HUB_OFFLINE=1',
++                  'PYTHONPATH=/recovery:/work/xMem'):
++        args += ['-e', value]
++    return args + ['-w', '/work/xMem', image, '-u', '/recovery/predict_vram.py', '--json', '-']
++
++
++def choose_cases(plan, ids, remaining_from):
++    cases = select_cases(plan, 'all')
++    if ids:
++        selected = set(ids)
++        unknown = selected - {c['case_id'] for c in cases}
++        if unknown:
++            raise ValueError('Unknown case IDs: ' + ', '.join(sorted(unknown)))
++        cases = [c for c in cases if c['case_id'] in selected]
++    elif remaining_from:
++        def succeeded(case):
++            path = remaining_from / (case['case_id'] + '.prediction.json')
++            return path.exists() and json.loads(path.read_text()).get('status') == 'ok'
++        cases = [c for c in cases if not succeeded(c)]
++    else:
++        raise ValueError('Specify --case-id for validation or --remaining-from after validation')
++    return cases
++
++
++def compare_reference(case_id, payload, result, root, revision=None):
++    if root is None or result.get('status') != 'ok':
++        return {'status': 'not_requested' if root is None else 'prediction_failed'}
++    prediction = root / (case_id + '.prediction.json')
++    inputs = root / (case_id + '.input.json')
++    if not prediction.exists() or not inputs.exists():
++        return {'status': 'no_successful_reference'}
++    old = json.loads(prediction.read_text())
++    if old.get('status') != 'ok':
++        return {'status': 'no_successful_reference'}
++    old_input = json.loads(inputs.read_text())
++    if old_input.get('request') != payload or (revision is not None and
++            (old_input.get('revision') != revision or old.get('revision') != revision)):
++        return {'status': 'incompatible_input'}
++    names = ('predicted_allocated_bytes', 'predicted_reserved_bytes')
++    deltas = {name: result[name] - old[name] for name in names}
++    return {'status': 'equal' if all(v == 0 for v in deltas.values()) else 'mismatch',
++            'delta_bytes': deltas, 'reference': str(prediction.resolve())}
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--output-root', required=True, type=Path)
++    selection = parser.add_mutually_exclusive_group(required=True)
++    selection.add_argument('--case-id', action='append', help='Exact case ID; repeat to select multiple cases')
++    selection.add_argument('--remaining-from', type=Path, help='Read-only old results; select every non-successful case')
++    parser.add_argument('--container', default='xmem-cpu')
++    parser.add_argument('--snapshot-image', help='Reuse an explicit local snapshot after verifying its Python environment')
++    parser.add_argument('--compare-with', type=Path, help='Read-only old results for exact allocated/reserved comparison')
++    parser.add_argument('--threads', type=int, default=4)
++    parser.add_argument('--memory-gib', type=float, default=32)
++    parser.add_argument('--host-reserve-gib', type=float, default=6)
++    parser.add_argument('--timeout-seconds', type=float, default=3600)
++    args = parser.parse_args()
++    if args.threads < 1 or args.memory_gib <= 0 or args.host_reserve_gib < 0 or args.timeout_seconds <= 0:
++        parser.error('Invalid resource limits')
++    out = args.output_root.resolve()
++    if out.exists():
++        parser.error('Use a new output directory; existing results are never overwritten')
++    plan = json.loads((ROOT/'benchmarks/aws342/selected-plan.json').read_text())
++    pins = json.loads((ROOT/'benchmarks/aws342/revisions.json').read_text())
++    cases = choose_cases(plan, args.case_id, args.remaining_from)
++    if not cases:
++        print('No incomplete cases selected')
++        return 0
++    lock = Path(f'/tmp/cloudgpufit-cpu-recovery-{os.getuid()}.lock').open('a')
++    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
++    # Do not snapshot an actively computing or stopped environment.
++    info = json.loads(docker('inspect', args.container, timeout=15).stdout)[0]
++    if not info['State']['Running']:
++        raise RuntimeError('The prepared CPU container must be running')
++    top = docker('top', args.container, '-eo', 'pid,args', timeout=15).stdout
++    if 'predict_vram.py' in top or 'run_prediction' in top:
++        raise RuntimeError('A prediction is still running; existing work was left untouched')
++    mounts = {m['Destination']: m['Source'] for m in info['Mounts'] if m['Type'] == 'bind'}
++    work, cache = mounts['/work'], mounts['/root/.cache/huggingface']
++    allocator_lock = json.loads((ROOT/'benchmarks/aws342/xmem-allocator-lock.json').read_text())
++    check = 'import json,hashlib,pathlib,sys; names=json.load(sys.stdin); print(json.dumps({n:hashlib.sha256((pathlib.Path("/work/xMem")/n).read_bytes()).hexdigest() for n in names}))'
++    hashes = json.loads(docker('exec', '-i', args.container, 'python', '-c', check,
++                              input=json.dumps(list(allocator_lock['sha256'])), timeout=30).stdout)
++    if hashes != allocator_lock['sha256']:
++        raise RuntimeError('Prepared xMem allocator differs from pinned source')
++    envcode = 'import json,torch,transformers,sys; print(json.dumps(dict(torch=torch.__version__,transformers=transformers.__version__,python=sys.version.split()[0],cuda=torch.version.cuda,gpu_available=torch.cuda.is_available())))'
++    environment = json.loads(docker('exec', args.container, 'python', '-c', envcode, timeout=60).stdout)
++    if (environment['torch'], environment['transformers'], environment['python'], environment['cuda'], environment['gpu_available']) != ('2.6.0+cu124', '4.52.4', '3.11.11', '12.4', False):
++        raise RuntimeError('Prepared CPU environment differs from pinned versions: ' + str(environment))
++    if args.snapshot_image:
++        snapshot_environment = json.loads(docker('run', '--rm', '--network', 'none', '--memory', str(2*GIB),
++            '--memory-swap', str(2*GIB), '--entrypoint', 'python', args.snapshot_image, '-c', envcode, timeout=60).stdout)
++        if snapshot_environment != environment:
++            raise RuntimeError('Snapshot environment differs from the prepared container')
++    configs = {model: json.loads(docker('exec', args.container, 'python', '-c', CONFIG,
++                                      model, pins[model]['revision'], timeout=120).stdout)
++               for model in dict.fromkeys(c['model'] for c in cases)}
++    memory_bytes = int(args.memory_gib * GIB)
++    required = memory_bytes + int(args.host_reserve_gib * GIB)
++    if available_bytes() < required:
++        raise RuntimeError('Host MemAvailable is below memory limit + safety reserve; no job started')
++    token = uuid.uuid4().hex
++    image = 'cloudgpufit-cpu-recovery:' + token
++    out.mkdir(parents=True)
++    git_commit = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
++    manifest = {'status': 'preparing', 'git_commit': git_commit, 'total_cases': len(cases), 'completed_cases': 0, 'success_count': 0,
++                'environment': environment, 'base_image_id': info['Image'], 'allocator_lock': allocator_lock,
++                'identity': {p: hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in SOURCES},
++                'plan_sha256': hashlib.sha256((ROOT/'benchmarks/aws342/selected-plan.json').read_bytes()).hexdigest(),
++                'revisions_sha256': hashlib.sha256((ROOT/'benchmarks/aws342/revisions.json').read_bytes()).hexdigest(),
++                'runner_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
++                'threads': args.threads, 'memory_limit_bytes': memory_bytes, 'host_reserve_bytes': required-memory_bytes,
++                'timeout_seconds': args.timeout_seconds, 'jobs': 1,
++                'reused_snapshot': args.snapshot_image,
++                'selection': [c['case_id'] for c in cases], 'started_unix': time.time()}
++    save(out/'manifest.json', manifest)
++    start = time.monotonic()
++    snapshot = False
++    interrupted = False
++    validation_failed = False
++    try:
++        if args.snapshot_image:
++            image_id = docker('image', 'inspect', '--format', '{{.Id}}', args.snapshot_image, timeout=15).stdout.strip()
++        else:
++            docker('commit', '--pause=false', args.container, image, timeout=900)
++            snapshot = True
++            # Some Docker versions emit deprecation warnings on stdout.
++            image_id = docker('image', 'inspect', '--format', '{{.Id}}', image, timeout=15).stdout.strip()
++        manifest.update(status='running', snapshot_image_id=image_id)
++        save(out/'manifest.json', manifest)
++        for number, case in enumerate(cases, 1):
++            cid = case['case_id']
++            payload = request(case, configs[case['model']], args.threads)
++            save(out/(cid+'.input.json'), {'case_id': cid, 'revision': pins[case['model']]['revision'], 'request': payload})
++            print(f'START {cid}', flush=True)
++            case_start = time.monotonic()
++            try:
++                if available_bytes() < required:
++                    raise RuntimeError('Host MemAvailable fell below admission threshold')
++                result = run_job('cgf-cpu-' + token[:12] + '-' + str(number),
++                                 job_command(image_id, work, cache, memory_bytes, args.threads),
++                                 payload, out/(cid+'.log'), args.timeout_seconds)
++            except KeyboardInterrupt:
++                result = {'status': 'error', 'error_kind': 'cancelled', 'error': 'Recovery interrupted'}
++            except Exception as exc:
++                result = {'status': 'error', 'error_kind': 'runner_error', 'error': f'{type(exc).__name__}: {exc}'}
++                if isinstance(exc, subprocess.CalledProcessError):
++                    result['docker_stderr'] = (exc.stderr or '')[-4000:]
++            result.update(case_id=cid, revision=pins[case['model']]['revision'],
++                          runner_elapsed_seconds=time.monotonic()-case_start)
++            comparison = compare_reference(cid, payload, result, args.compare_with, pins[case['model']]['revision'])
++            result['reference_comparison'] = comparison
++            save(out/(cid+'.prediction.json'), result)
++            manifest['completed_cases'] += 1
++            manifest['success_count'] += result['status'] == 'ok'
++            manifest['elapsed_seconds'] = time.monotonic()-start
++            save(out/'manifest.json', manifest)
++            print(f'[{number}/{len(cases)}] {result["status"]} {cid} {result.get("error_kind", "")}', flush=True)
++            if result.get('error_kind') == 'cancelled':
++                interrupted = True
++                break
++            if comparison['status'] in ('mismatch', 'incompatible_input'):
++                print('STOP reference comparison: ' + json.dumps(comparison), flush=True)
++                validation_failed = True
++                break
++    except KeyboardInterrupt:
++        interrupted = True
++    finally:
++        if snapshot:
++            subprocess.run(['docker', 'image', 'rm', image], capture_output=True, timeout=60)
++        manifest.update(status='interrupted' if interrupted else 'validation_mismatch' if validation_failed else
++                        'complete' if manifest['completed_cases'] == len(cases) and manifest['success_count'] == len(cases)
++                        else 'complete_with_errors' if manifest['completed_cases'] == len(cases) else 'runner_failed',
++                        elapsed_seconds=time.monotonic()-start)
++        save(out/'manifest.json', manifest)
++    return 130 if interrupted else 2 if validation_failed else 0 if manifest['status'] == 'complete' else 1
++
++
++if __name__ == '__main__':
++    def interrupt(*_):
++        raise KeyboardInterrupt
++    signal.signal(signal.SIGTERM, interrupt)
++    signal.signal(signal.SIGHUP, interrupt)
++    raise SystemExit(main())
+diff --git a/tests/test_memory_optimized_trace.py b/tests/test_memory_optimized_trace.py
+new file mode 100644
+index 0000000..d8cc2ec
+--- /dev/null
++++ b/tests/test_memory_optimized_trace.py
+@@ -0,0 +1,251 @@
++import importlib.util
++import json
++import os
++from pathlib import Path
++import random
++import subprocess
++import sys
++import tempfile
++import types
++import unittest
++from unittest.mock import patch, Mock
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++import inference_trace_runtime as runtime
++from cpu_tensor_trace import REGION, selected_lifetimes
++
++spec = importlib.util.spec_from_file_location('recovery', ROOT/'tools/run_prediction_recovery.py')
++sys.path.insert(0, str(ROOT/'tools'))
++recovery = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(recovery)
++
++
++class TraceReaderTests(unittest.TestCase):
++    def read(self, value, chunk=7, raw=False):
++        with tempfile.TemporaryDirectory() as directory:
++            path = Path(directory)/'trace.json'
++            path.write_text(value if raw else json.dumps(value, ensure_ascii=False))
++            return list(runtime.iter_trace_events(path, chunk))
++
++    def test_chunk_boundaries_and_metadata(self):
++        events = [{'name': '한글 " \\ [memory]', 'ts': 12345.6789, 'args': {'s': 'x'*300}}]
++        value = {'metadata': {'nested': ['traceEvents', 123456789]}, 'traceEvents': events, 'tail': [False, None]}
++        for chunk in (1, 2, 7, 64, 4096):
++            self.assertEqual(self.read(value, chunk), events)
++
++    def test_empty_trace(self):
++        self.assertEqual(self.read({'traceEvents': []}), [])
++
++    def test_invalid_trace_rejected(self):
++        for value in ('{}', '{"traceEvents":[', '{"traceEvents":[{}',
++                      '{"traceEvents":[{},]}', '{"traceEvents":[3]}',
++                      '{"traceEvents":[],"traceEvents":[]}', '{"traceEvents":[]}junk'):
++            with self.assertRaises(ValueError, msg=value):
++                self.read(value, raw=True)
++
++    def test_filter_keeps_exact_lifetime_order(self):
++        def mem(ts, size, address):
++            return {'name': '[memory]', 'cat': 'cpu_instant_event', 'ts': ts,
++                    'args': {'Device Type': 0, 'Bytes': size, 'Addr': address}}
++        events = [{'name': REGION, 'cat': 'user_annotation', 'ts': t, 'dur': 10} for t in (10, 30, 50)]
++        events += [mem(11, 4096, 1), mem(22, -4096, 1), mem(31, 2048, 1),
++                   mem(32, -2048, 1), mem(51, 1024, 2),
++                   {'name': 'aten::mm', 'cat': 'cpu_op', 'ts': 31}]
++        random.Random(4).shuffle(events)
++        with tempfile.TemporaryDirectory() as directory:
++            path = Path(directory)/'trace.json'
++            path.write_text(json.dumps({'traceEvents': events}))
++            filtered, total = runtime.read_memory_events(path, REGION)
++        self.assertEqual(total, len(events))
++        self.assertEqual(selected_lifetimes(filtered), selected_lifetimes(events))
++
++
++class RecoveryTests(unittest.TestCase):
++    def classify(self, text, code, state=None, **kwargs):
++        with tempfile.TemporaryDirectory() as directory:
++            log = Path(directory)/'case.log';log.write_text(text)
++            return recovery.classify(code, state or {'ExitCode': code, 'OOMKilled': False}, log, **kwargs)
++
++    def test_exit_without_json_does_not_discard_returncode(self):
++        result = self.classify('', 137)
++        self.assertEqual(result['exit_code'], 137)
++        self.assertFalse(result['oom_killed'])
++        self.assertEqual(result['error_kind'], 'process_exit_without_json')
++
++    def test_only_docker_oom_evidence_is_classified_as_oom(self):
++        result = self.classify('', 137, {'ExitCode': 137, 'OOMKilled': True})
++        self.assertEqual(result['error_kind'], 'cgroup_oom')
++
++    def test_cancel_and_timeout_are_distinct(self):
++        self.assertEqual(self.classify('', 137, cancelled=True)['error_kind'], 'cancelled')
++        self.assertEqual(self.classify('', 137, timed_out=True)['error_kind'], 'timeout')
++
++    def test_nonzero_exit_cannot_be_success(self):
++        result = self.classify(json.dumps({'status': 'ok'}), 1)
++        self.assertEqual(result['status'], 'error')
++
++    def test_success_preserves_both_byte_results(self):
++        result = self.classify(json.dumps({'status': 'ok', 'predicted_allocated_bytes': 512,
++                                         'predicted_reserved_bytes': 2097152}), 0)
++        self.assertEqual(result['status'], 'ok')
++        self.assertEqual((result['predicted_allocated_bytes'], result['predicted_reserved_bytes']), (512, 2097152))
++
++    def test_last_phase_survives_missing_json(self):
++        result = self.classify('CGF_PROGRESS {"event":"phase_start","phase":"allocator_simulation"}\n', 137)
++        self.assertEqual(result['stage'], 'allocator_simulation')
++
++    def test_container_has_hard_limit_and_readonly_sources(self):
++        command = recovery.job_command('image', '/host/work', '/host/cache', 32*recovery.GIB, 4)
++        self.assertEqual(command[command.index('--memory')+1], str(32*recovery.GIB))
++        self.assertEqual(command[command.index('--memory-swap')+1], str(32*recovery.GIB))
++        self.assertEqual(command[command.index('--network')+1], 'none')
++        self.assertTrue(all(s.endswith(',readonly') for s in command if s.startswith('type=bind,')))
++
++    def test_remaining_selection_does_not_rerun_successes(self):
++        plan = json.loads((ROOT/'benchmarks/aws342/selected-plan.json').read_text())
++        case = plan['cases'][0]
++        with tempfile.TemporaryDirectory() as directory:
++            path = Path(directory)
++            (path/(case['case_id']+'.prediction.json')).write_text('{"status":"ok"}')
++            cases = recovery.choose_cases(plan, None, path)
++        self.assertEqual(len(cases), 341)
++        self.assertNotIn(case['case_id'], {c['case_id'] for c in cases})
++
++    def test_unknown_case_rejected(self):
++        plan = json.loads((ROOT/'benchmarks/aws342/selected-plan.json').read_text())
++        with self.assertRaises(ValueError):
++            recovery.choose_cases(plan, ['unknown'], None)
++
++    def test_reference_comparison_uses_exact_bytes_and_input(self):
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            (root/'case.input.json').write_text(json.dumps({'request': {'threads': 4}}))
++            (root/'case.prediction.json').write_text(json.dumps({'status':'ok',
++                'predicted_allocated_bytes':512, 'predicted_reserved_bytes':2097152}))
++            result = {'status':'ok','predicted_allocated_bytes':513,'predicted_reserved_bytes':2097152}
++            comparison = recovery.compare_reference('case', {'threads':4}, result, root)
++            self.assertEqual(comparison['status'], 'mismatch')
++            self.assertEqual(comparison['delta_bytes']['predicted_allocated_bytes'], 1)
++            self.assertEqual(recovery.compare_reference('case', {'threads':1}, result, root)['status'], 'incompatible_input')
++
++    def test_reference_revision_must_match(self):
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            (root/'case.input.json').write_text(json.dumps({'revision':'old','request':{}}))
++            result = {'status':'ok','revision':'old','predicted_allocated_bytes':512,'predicted_reserved_bytes':1024}
++            (root/'case.prediction.json').write_text(json.dumps(result))
++            self.assertEqual(recovery.compare_reference('case', {}, result, root, 'new')['status'], 'incompatible_input')
++
++    def test_timeout_stops_and_removes_job_container(self):
++        proc = Mock()
++        proc.communicate.side_effect = [subprocess.TimeoutExpired('docker', 1), ('', '')]
++        proc.poll.side_effect = [None, 137]
++        proc.returncode = 137
++        def fake_docker(*args, **kwargs):
++            return types.SimpleNamespace(stdout=(json.dumps([{'Id':'test-id','HostConfig':{'Memory':1024,'MemorySwap':1024},'Mounts':[]}]) if args == ('inspect', 'unique-job') else json.dumps({'ExitCode': 137, 'OOMKilled': False})) if args[0]=='inspect' else '')
++        with tempfile.TemporaryDirectory() as directory, \
++             patch.object(recovery, 'docker', side_effect=fake_docker) as calls, \
++             patch.object(recovery, 'stop_job') as stop, \
++             patch.object(recovery.subprocess, 'Popen', return_value=proc):
++            result = recovery.run_job('unique-job', ['image'], {}, Path(directory)/'log', 1)
++        self.assertEqual(result['error_kind'], 'timeout')
++        stop.assert_called_once_with('unique-job')
++        self.assertEqual(calls.call_args.args, ('rm', '-f', 'unique-job'))
++
++
++@unittest.skipUnless(os.environ.get('XMEM_REFERENCE_ROOT'), 'Set XMEM_REFERENCE_ROOT to the pinned upstream xMem checkout')
++class AllocatorEquivalenceTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        # Load the actual pinned allocator/profiler modules without importing the
++        # unrelated training estimator from perf_estimator/__init__.py.
++        cls.previous = {k: v for k, v in sys.modules.items() if k == 'perf_estimator' or k.startswith('perf_estimator.')}
++        for k in cls.previous:
++            del sys.modules[k]
++        package = types.ModuleType('perf_estimator')
++        package.__path__ = [str(Path(os.environ['XMEM_REFERENCE_ROOT'])/'perf_estimator')]
++        sys.modules['perf_estimator'] = package
++
++    @classmethod
++    def tearDownClass(cls):
++        for k in list(sys.modules):
++            if k == 'perf_estimator' or k.startswith('perf_estimator.'):
++                del sys.modules[k]
++        sys.modules.update(cls.previous)
++
++    def test_pinned_allocator_full_and_summary_match_every_counter(self):
++        from perf_estimator.allocator import AllocatorSim
++        from perf_estimator.config import Config
++        blocks = [types.SimpleNamespace(bytes=513, alloc_time=0, free_time=None)]
++        rng = random.Random(9)
++        for i in range(400):
++            blocks.append(types.SimpleNamespace(bytes=rng.choice([1, 511, 512, 513, 1000000, 2097153, 12000000]),
++                                                alloc_time=i*2+1, free_time=i*2+rng.randint(1, 20)))
++        with tempfile.TemporaryDirectory() as directory:
++            conf = Config(save2tmp=True, run_id='equivalence-'+Path(directory).name)
++            expected = AllocatorSim(max_allocated_memory_gb=2, config=conf).simulate(blocks)
++            self.assertFalse(expected.oom)
++            actual = runtime.simulate(blocks, 2, conf)
++        self.assertEqual(actual._trace.max_usage_changes, expected._trace.max_usage_changes)
++        self.assertEqual(actual._trace.max_segment_changes, expected._trace.max_segment_changes)
++        self.assertGreater(len(expected._trace._trace_history), 0)
++        self.assertEqual(actual._trace._trace_history, [])
++
++    def test_capacity_failure_is_identified(self):
++        from perf_estimator.config import Config
++        block = types.SimpleNamespace(bytes=32*1024**2, alloc_time=0, free_time=None)
++        with self.assertRaisesRegex(RuntimeError, 'simulated_gpu_capacity_exceeded'):
++            runtime.simulate([block], 0.001, Config(save2tmp=True, run_id='capacity-test'))
++
++    def test_allocator_bug_is_not_mislabeled_as_capacity(self):
++        from perf_estimator.config import Config
++        from perf_estimator.allocator.allocator import CachingAllocator
++        block = types.SimpleNamespace(bytes=512, alloc_time=0, free_time=None)
++        with patch.object(CachingAllocator, 'malloc', side_effect=ValueError('invalid state')):
++            with self.assertRaisesRegex(RuntimeError, 'allocator_simulation_failed: ValueError'):
++                runtime.simulate([block], 2, Config(save2tmp=True, run_id='failure-test'))
++
++    def test_real_tiny_gpt2_trace_replay_matches_upstream(self):
++        import torch
++        from transformers import GPT2Config, GPT2LMHeadModel
++        from perf_estimator.allocator import AllocatorSim
++        from perf_estimator.config import Config
++        from perf_estimator.profiler import MemoryBlock, CpuInstantNode
++        from predict_vram import storage_sizes
++        from cpu_tensor_trace import trace_and_estimate
++        torch.manual_seed(20261006)
++        torch.set_num_threads(1)
++        config = GPT2Config(n_layer=1, n_head=2, n_embd=16, vocab_size=64, n_positions=64,
++                            eos_token_id=63, bos_token_id=63, pad_token_id=63)
++        config._attn_implementation = 'eager'
++        model = GPT2LMHeadModel(config).eval()
++        inputs = {'input_ids': torch.ones((1, 8), dtype=torch.long), 'attention_mask': torch.ones((1, 8), dtype=torch.long)}
++        with tempfile.TemporaryDirectory() as directory:
++            path = Path(directory)/'trace.json'
++            optimized = trace_and_estimate(model, inputs, 'generate', 4, storage_sizes, 2, trace_output=path)
++            original_events = json.loads(path.read_text())['traceEvents']
++            lifetimes, regions = selected_lifetimes(original_events)
++            blocks = []
++            for alloc, free in lifetimes:
++                block = MemoryBlock(CpuInstantNode(alloc))
++                if free is not None:
++                    block.set_free_node(CpuInstantNode(free))
++                blocks.append(block)
++            resident = storage_sizes(list(model.parameters())+list(model.buffers())) + storage_sizes(list(inputs.values()))
++            for i, size in enumerate(resident):
++                if size:
++                    event = {'ph':'i','cat':'cpu_instant_event','s':'t','name':'[memory]',
++                             'pid':0,'tid':0,'ts':regions[0][0]-1,
++                             'args':{'Bytes':size,'Addr':-i-1,'Device Id':-1,'Device Type':0,'Ev Idx':0}}
++                    blocks.append(MemoryBlock(CpuInstantNode(event)))
++            blocks.sort(key=lambda b:b.alloc_time)
++            expected = AllocatorSim(max_allocated_memory_gb=2, config=Config(save2tmp=True,run_id='tiny-original')).simulate(blocks)
++        self.assertFalse(expected.oom)
++        self.assertEqual(optimized['memory']['tensor'], max(expected._trace.max_usage_changes))
++        self.assertEqual(optimized['memory']['segment'], max(expected._trace.max_segment_changes))
++        self.assertEqual(optimized['trace_summary']['measured_invocations'], 3)
++
++
++if __name__ == '__main__':
++    unittest.main()
+diff --git a/docs/cpu_prediction_recovery_20261108.md b/docs/cpu_prediction_recovery_20261108.md
+new file mode 100644
+index 0000000..56bca9f
+--- /dev/null
++++ b/docs/cpu_prediction_recovery_20261108.md
+@@ -0,0 +1,161 @@
++# CPU prediction OOM diagnosis and bounded recovery
++
++## Evidence and limits
++
++The diagnostics archive was collected at 2026-11-05 13:51:06 KST. This is a stopped
++run, not a live VM inspection on November 8. Its manifest records CloudGPUFit
++`7f822d76af13bea39191beb1852ec67513b18f15`, torch 2.6.0+cu124,
++Transformers 4.52.4, Python 3.11.11, threads=4 and jobs=6.
++The copied predictor and trace helper hashes match the manifest, and the copied
++locked allocator files match the upstream lock. xMem is pinned to
++`1ee4bd08dda277a6248abee5b6d40e0d6067efaa`.
++
++- Manifest: 260 completed, 244 successful, elapsed 154837.26 seconds (43.01 hours).
++- Files: 244 successful predictions and 17 errors. The extra error is the last,
++  manually interrupted `core__decoder_llm__large__fp16__06`, after the manifest's
++  last update. 81 conditions have no prediction file.
++- Kernel: 16 Python processes in the same Docker cgroup were killed by global
++  host OOM. Every one has exactly one corresponding error JSON saved 0–2 seconds
++  later. This is a strong one-to-one temporal association, not a recorded
++  condition-to-host-PID mapping from the old runner.
++- Docker inspect: Memory=0, MemorySwap=0. `/home/inuos/xmem-work` is bind-mounted
++  read/write at `/work`. The old 36GB reservation was not a hard limit.
++- `gpuGetDeviceCount failed with code 35` appears in all 244 successful logs as
++  well as 5 failed logs. It does not distinguish failures and is not established
++  as their cause.
++
++## OOM association table
++
++The suffix below follows `core__decoder_llm__`. RSS is the sum of anon and file RSS
++from the kernel victim line, converted from KiB to GiB. Delta is error JSON mtime
++minus the kernel kill timestamp, using KST.
++
++| Condition suffix | Host victim PID | RSS GiB | Delta seconds |
++| --- | ---: | ---: | ---: |
++| small__fp32__11 | 475381 | 18.51 | 2 |
++| small__fp32__12 | 475423 | 17.51 | 1 |
++| small__fp32__14 | 475503 | 16.69 | 0 |
++| small__fp16__14 | 474934 | 14.57 | 1 |
++| small__fp16__12 | 474853 | 14.88 | 1 |
++| medium__fp16__11 | 486170 | 28.73 | 2 |
++| medium__fp16__12 | 502921 | 29.45 | 1 |
++| medium__fp32__10 | 509327 | 18.31 | 1 |
++| medium__fp16__14 | 508918 | 20.98 | 1 |
++| medium__fp32__11 | 509367 | 43.78 | 2 |
++| medium__fp32__14 | 509481 | 27.51 | 2 |
++| medium__fp32__12 | 509406 | 44.41 | 2 |
++| medium__bf16__11 | 509923 | 22.25 | 1 |
++| medium__bf16__12 | 509964 | 25.71 | 1 |
++| large__fp16__03 | 514053 | 46.25 | 2 |
++| large__fp16__04 | 518456 | 46.25 | 2 |
++
++GPT-2 XL FP16 case 03 (B4, input256, output64) ran about 11.44 hours before OOM;
++case 04 (B8, input256, output64) ran about 12.87 hours. Their console intervals
++show a single prediction at that stage, so reducing concurrency alone does not
++solve these cases.
++
++The successful XL B2 case took 20957.7 seconds and retained 371334 tensor
++lifetimes. The old code additionally retained profiler results, all parsed trace
++events and allocator history. `Trace._record` copies `list(self._segments)` at
++every event: shallow reference lists, not deep snapshots. Its total reference
++storage grows with the sum of segment counts across events. No phase-level RSS
++was recorded, so the exact point of each old peak cannot be recovered.
++
++CPU FP16 is another strong time signal: medium case 04 took 12882.4 seconds in
++FP16 versus 130.8 seconds in FP32 and 196.2 seconds in BF16. These are whole-case
++times under different concurrent loads, not a controlled kernel speed ratio.
++Do not silently replace FP16 CPU execution with FP32 or rescale its trace.
++
++## Changes
++
++1. Keep warmup=1, measured invocations=3, native dtype, full generate, lifetime
++   matching, timestamp tie handling and the pinned allocator's transitions.
++2. Incrementally decode Chrome trace events using the Python standard library;
++   retain only CPU memory events and inference annotations before stable sorting.
++   The exporter is not assumed to emit chronological order. Matching still keeps
++   frees outside inference regions, repeated addresses and unfreed lifetimes.
++3. End the profiler helper's scope before parsing. This drops its references;
++   it does not guarantee immediate RSS return to the OS. Model/input memory and
++   O(number of memory events) analysis storage still remain.
++4. Use the real upstream Trace counter methods with only `_record` disabled.
++   Upstream allocator files and lock hashes stay unchanged. Full history can be
++   requested with `--allocator_history` for diagnostics.
++5. Emit low-frequency phase start/end records with PID, current/max RSS,
++   available cgroup memory counters and elapsed time. Include Python traceback
++   and stage in predictor errors. Distinguish simulation failures from a known
++   allocator capacity exception.
++6. Add a separate sequential recovery runner. It snapshots the prepared local
++   CPU container's writable layer, mounts original xMem/cache read-only and
++   overlays the new predictor files read-only. No package install or source
++   synchronization into the old `/work/xMem` is required.
++7. Each new case runs with its own Docker hard memory limit, swap disabled,
++   timeout and cleanup on cancellation. Docker's OOMKilled state, exit code and
++   last phase are saved before removal. Exit 137 alone is not labeled OOM.
++8. Require fresh output directories. Compare both allocated and reserved exactly
++   against an optional old successful reference, and stop on mismatch or
++   incompatible inputs. Never rerun old successes through `--remaining-from`.
++9. Block accidental legacy shared-container runs unless explicitly opted into
++   with `--allow-unbounded-legacy-run`; preflight-only remains available.
++
++The default recovery cap of 32GiB with a 6GiB host admission reserve is a starting
++configuration for the approximately 47GiB VM, not a prediction of required RAM.
++The default one-hour timeout is an operational bound, not a claim that every
++original-size case will complete in one hour. A cap/timeout failure is recorded
++and is not automatically retried. Other host workloads can still create memory
++pressure after admission; a job cap does not reserve host memory.
++
++## Validation completed here
++
++- Python 3.12, torch 2.6.0+cpu, Transformers 4.52.4 in an isolated review runtime.
++  This is not the VM's Python 3.11/cu124 image.
++- 39 regression tests passed, including exact equality of every allocated and
++  reserved counter in an overlapping synthetic event sequence, and exact peak
++  equality when replaying the same real tiny GPT-2 Chrome trace through upstream
++  and summary modes. Tests also cover chunk boundaries, malformed JSON, address
++  reuse, unfreed memory, error classification and timeout cleanup logic.
++- Tests load the actual pinned allocator/profiler modules while bypassing the
++  unrelated package-level training estimator import. No allocator policy or
++  byte counters are mocked in equivalence tests.
++- The existing offline smoke suite also passed all 15 cases: tiny GPT-2, T5,
++  ViT, ResNet and MobileNetV2, each in FP32/FP16/BF16. This exercises actual CPU
++  forward/generate, including T5 self/cross-KV observations, on reduced models.
++- No Docker daemon is available in this review runtime. Docker lifecycle tests
++  validate construction and cleanup logic with mocked CLI calls; actual memory
++  enforcement, snapshot mounts and cancellation need the VM check below.
++- No original-size VM workload or new GPU instance has been started. No measured
++  speedup or RAM reduction is claimed for the failing workloads yet.
++
++## First VM check: two successful small references
++
++Use a separate checkout of this branch. Do not run `--prepare` in the original
++checkout or reuse the original result directory. Keep the existing `xmem-cpu`
++container running idle because its prepared dependencies are used for the local
++snapshot. The recovery runner never uploads that snapshot.
++
++```bash
++python3 -u tools/run_prediction_recovery.py \
++  --output-root ~/cloudgpufit-predictions/recovery-check-01 \
++  --case-id core__decoder_llm__small__fp32__01 \
++  --case-id core__decoder_llm__small__fp16__01 \
++  --compare-with ~/cloudgpufit-predictions/native-v3-t4-j6 \
++  --threads 4 --memory-gib 32 --host-reserve-gib 6 --timeout-seconds 3600
++```
++
++Inspect each prediction's `reference_comparison`, phase logs and manifest.
++Both allocated and reserved deltas must be zero before treating the new path
++as equivalent on these cases. Do not widen tolerance if they differ.
++
++Then validate one previous failure, for example
++`core__decoder_llm__small__fp32__12` (B4, input768, output128), using a different
++output root. Also check T5 self/cross-KV and one Vision reference before expansion.
++Test cancellation and a deliberately small job cap on a tiny workload, checking
++that only the uniquely named job container disappears and the old container and
++results remain intact. An original-size failure has no successful old prediction
++to use as an equality reference.
++
++Only after these checks, `--remaining-from ~/cloudgpufit-predictions/native-v3-t4-j6`
++selects the 17 errors and 81 missing conditions (98 total in this snapshot).
++It does not copy old successes into a new-version accuracy dataset. Keep those
++as explicitly versioned historical references. Three-to-one invocation reduction,
++GPU reserved initial-state alignment, input-value alignment and FakeTensor/meta
++execution are outside this change.
+diff --git a/docs/cpu_recovery_vm_validation_20261108.md b/docs/cpu_recovery_vm_validation_20261108.md
+new file mode 100644
+index 0000000..8cffba6
+--- /dev/null
++++ b/docs/cpu_recovery_vm_validation_20261108.md
+@@ -0,0 +1,89 @@
++# CPU recovery validation on INUOSVM-1, 2026-11-08 KST
++
++This report supplements the supplied handoff; its historical results are not treated as VM validation.
++
++## Preserved baseline and source
++
++- Original checkout: `/home/inuos/CloudGPUFit`, branch `codex/vram-native-inference-20261103`, HEAD `7f822d76af13bea39191beb1852ec67513b18f15`. Only pre-existing untracked `.cpu-prediction.lock` was present.
++- Independent worktree: `/home/inuos/CloudGPUFit-cpu-recovery-20261108` at the same base, plus the supplied patch and the corrections below. No fetch, push, install, reset, clean or prune was used.
++- Original predictions: `/home/inuos/cloudgpufit-predictions/native-v3-t4-j6`: 244 successful, 17 error, 81 absent. Historical manifest remains `running`, completed 260; no prediction process was active.
++- Original `xmem-cpu` was running only `sleep infinity`. Source `/home/inuos/xmem-work` and HF cache mounts were confirmed before work.
++- Host has 24 logical CPUs, approximately 47 GiB RAM, no swap. About 45 GiB was available at admission.
++- ZIP entries and extracted package files match every provided SHA-256. Original results/logs (787 files) and original mounted predictor hashes were inventoried in `recovery-audit-20261108/before.json`.
++
++## Independent review and corrections
++
++The patch preserves native dtype, one warmup, three measured invocations, full generate, lifetime matching, resident storage order, and upstream allocator transitions/counters. Stable sorting follows event filtering; frees outside measured regions are retained. `SummaryTrace` suppresses only `_record`, whose upstream implementation does not alter byte counters. The parser still retains O(E) selected events and the allocator retains O(E) maps/counters.
++
++VM findings required these additional corrections:
++
++1. Docker 29.7.2 emits a `commit --pause=false` deprecation warning on stdout. The supplied runner treated that warning plus the SHA as an image ID. The first attempt (`recovery-check-01`) therefore failed at container creation, before model inference. The runner now resolves the image ID with `docker image inspect`.
++2. New predictor files live at a separate read-only `/recovery` mount, with `/work/xMem` on PYTHONPATH. This avoids creating a new helper mountpoint inside the read-only original source. No file overlay requires editing original xMem.
++3. An explicitly supplied local snapshot can be reused after checking its Python/torch/Transformers/CUDA/GPU environment against the prepared container; its ID and reuse source are recorded. This avoids repeatedly snapshotting the approximately 5.2 GB writable layer during validation.
++4. The new runtime helper is included in the pipeline code fingerprint. Reference comparisons now require matching revision in both input and prediction, in addition to exact request/thread equality.
++5. Measured inference and profiler stop have separate phase timings. Profiler start/stop still surrounds exactly the same three measured invocations.
++6. Results record actual container ID, host PID/cgroup when observable, hard RAM/swap/CPU limits, mounts and final Docker state.
++
++## Actual VM tests
++
++Environment: Python 3.11.11, torch 2.6.0+cu124, Transformers 4.52.4, CUDA runtime 12.4, GPU unavailable. Allocator lock file hashes match the pinned xMem source. Validation image `cloudgpufit-cpu-validation:20261108` is local only; image ID is recorded in manifests.
++
++- Host regressions: 40 tests, 36 passed / 4 allocator tests skipped because the host environment is not the prepared runtime.
++- Isolated VM regressions: all 40 passed, including identical full allocated/reserved counter sequences for overlapping events and identical peaks for the same real tiny GPT-2 trace.
++- Isolated VM integration: all 15 cases passed, covering tiny GPT-2/T5/ViT/ResNet/MobileNetV2 in FP32/FP16/BF16 and T5 self/cross KV.
++- Real Docker lifecycle checks: exit 7 and exit 137 without OOM evidence remain process errors; a 64 MiB job allocating 256 MiB reports `OOMKilled=true`/`cgroup_oom`; timeout and SIGTERM cancellation have distinct classifications. Every test job container was removed and the original container stayed running. `lifecycle-results.json` records actual states.
++- Observed representative cgroup: memory.max=34359738368 (32 GiB), memory.swap.max=0, cpu.max=400000/100000 (4 CPUs). `/work`, HF cache and `/recovery` were all read-only. Evidence: `active-container-inspect.json`, `active-cgroup-mountinfo.txt`.
++
++## Limits
++
++Graceful Python-handled cancellation and ordinary errors are tested. SIGKILL/host failure cannot execute Python finally; Docker containers/images may need cleanup by their recorded unique IDs after such a failure. CPU/GPU random weight and allocator initial-state differences remain a separate accuracy question. Historical elapsed times were collected under different concurrent loads and are not controlled speedup measurements.
++
++## Original-size results
++
++All cases ran sequentially, with threads=4, a 4-CPU Docker quota, 32 GiB hard RAM, no swap and a 6 GiB admission reserve. No other prediction or VM test was active during these cases. Python/torch/Transformers versions, allocator hashes, plan/revisions hashes, source hashes, snapshot ID and runner hash are recorded in each manifest. This checkout remains based on `7f822d7`; the validated patch and its SHA-256 identify the uncommitted modifications.
++
++| Case ID | allocated bytes (old → new) | reserved bytes (old → new) | allocated / reserved delta | elapsed s | peak RSS GiB | cgroup peak GiB |
++|---|---:|---:|---:|---:|---:|---:|
++| core__decoder_llm__small__fp16__01 | 310894080 → 310894080 | 346030080 → 346030080 | 0 / 0 bytes | 335.53 | 2.682 | 2.576 |
++| core__decoder_llm__small__fp32__01 | 593162240 → 593162240 | 694157312 → 694157312 | 0 / 0 bytes | 35.37 | 2.850 | 2.643 |
++| core__text_encdec__small__fp32__01 | 252521472 → 252521472 | 278921216 → 278921216 | 0 / 0 bytes | 24.87 | 1.876 | 1.662 |
++| core__vision_cls__large__fp32__01 | 1229447168 → 1229447168 | 1237319680 → 1237319680 | 0 / 0 bytes | 11.53 | 2.143 | 1.909 |
++| core__vision_cls__small__fp32__01 | 31478784 → 31478784 | 52428800 → 52428800 | 0 / 0 bytes | 6.03 | 0.659 | 0.421 |
++| core__decoder_llm__small__fp32__12 | no successful reference → 1479036928 | no successful reference → 1965031424 | not comparable | 111.38 | 30.744 | 30.619 |
++
++Elapsed time includes process startup and runner overhead; phase times below do not sum to it. RSS and cgroup accounting have different meanings (shared pages/file cache); they are not interchangeable or additive.
++
++| Case ID | initialization | warmup | measured inference (3) | profiler stop | export | parse | lifetime matching | allocator |
++|---|---:|---:|---:|---:|---:|---:|---:|---:|
++| core__decoder_llm__small__fp16__01 | 13.788 | 71.654 | 223.204 | 6.400 | 2.282 | 6.468 | 0.293 | 5.697 |
++| core__decoder_llm__small__fp32__01 | 4.569 | 1.838 | 6.833 | 3.200 | 1.276 | 4.298 | 0.333 | 6.515 |
++| core__text_encdec__small__fp32__01 | 3.049 | 0.803 | 2.760 | 2.862 | 1.046 | 3.083 | 0.509 | 5.618 |
++| core__vision_cls__large__fp32__01 | 6.218 | 0.425 | 1.224 | 0.051 | 0.028 | 0.072 | 0.004 | 0.126 |
++| core__vision_cls__small__fp32__01 | 2.248 | 0.054 | 0.086 | 0.027 | 0.015 | 0.041 | 0.003 | 0.070 |
++| core__decoder_llm__small__fp32__12 | 4.503 | 12.017 | 51.709 | 6.597 | 2.626 | 9.113 | 1.325 | 13.769 |
++
++The T5 reference retained self KV storage 1,572,864 bytes and cross KV storage 6,291,456 bytes, with no analytic additions. Both original and new measured invocation counts are three.
++
++## Findings and remaining recovery
++
++The old `prepare_recovery.py --repo .` failure is consistent with a non-repository working directory. Providing the verified absolute repository path successfully prepared the independent worktree. The supplied patch had not been applied before this task.
++
++The previous OOM-associated GPT-2 small FP32 case 12 (B4, input768, generate128) now completed successfully under the hard cap. Its measured inference took 51.709 s; warmup peak RSS was 2.116 GiB, and peak RSS had already reached 30.400 GiB by measured inference completion, before JSON export/parsing/allocator replay. Its final peak RSS was 30.744 GiB. The dominant RAM increase therefore persists inside profiled CPU inference in this case. Phase evidence alone does not separate native profiler retention, live tensor workspaces and CPU allocator caching; that attribution remains open.
++
++GPT-2 small FP16 case 01 spent 71.654 s warming up and 223.204 s in three measured invocations, versus 6.400 s stopping the profiler, 6.468 s parsing and 5.697 s simulating. Actual CPU inference remains the dominant FP16 time cost on this host. Its total was 335.53 s; the historical 331.7 s was under a different load/quota regime, so no speedup is claimed. FP32 took 35.37 s total in this validation. Neither elapsed CPU time nor CPU RSS is used as a GPU prediction.
++
++The patch demonstrably preserves the checked byte results and bounds failure/cleanup behavior. It does not establish a RAM-reduction factor: old phase/peak measurements are absent and the historical victim RSS is not an equivalent single-case peak measurement. The native profiler/CPU path still requires substantial memory. The recovered case nearly consumed the 32 GiB cap, so starting all remaining heavy GPT-2 XL/T5-3B conditions would be premature; their safe completion time and memory are unverified.
++
++Original historical successes remain 244. Five successful references were rerun and matched exactly; this is evidence of equivalence, not a claim that all 244 have been individually rerun. One of the 98 previously failed/absent conditions was recovered, leaving **97** (16 original errors plus 81 absent). `remaining-after-validation.json` lists those exact conditions and the recovered new-version case. No historical success was copied into a new-version dataset. `--remaining-from` against only the original directory would still select 98; use the audited remaining list to avoid rerunning the recovered case.
++
++Next work should first identify memory retention within the profiled inference stage under the same dtype/invocation/allocator semantics, using bounded representative jobs. Any design that separates profiler sessions, changes measured invocation count, or replaces CPU arithmetic must have a separate version and fixed-trace/lifetime equivalence validation. FP16 kernel cost also remains a separate performance issue. A defensible completion-time estimate for the remaining 97 is not available from these six cases.
++
++## Final preservation and artifacts
++
++`preservation-check.json` confirms all 787 original result/log files have the same SHA-256, original mounted predictor sources have identical SHA-256, original checkout status is unchanged, and the new helper was not created in original xMem. Only the independent worktree, new result/audit directories and a local validation image were created. At completion Docker showed only the original `xmem-cpu`, still running the original sleep process. The validation image is deliberately retained for reproducibility; no remote Git operation was performed.
++
++- `/home/inuos/cloudgpufit-predictions/recovery-check-01`: preserved Docker 29 compatibility failures, no inference.
++- `recovery-check-02`: two GPT-2 references.
++- `recovery-check-03`: T5 and two Vision references.
++- `recovery-check-04`: recovered former OOM-associated GPT-2 condition.
++- `recovery-audit-20261108`: regression/integration logs, lifecycle tests, source/result inventories, actual cgroup/mount evidence, per-case summaries, and the remaining-condition list.

@@ -1,0 +1,560 @@
+diff --git a/tests/test_prediction_scheduler.py b/tests/test_prediction_scheduler.py
+index 83bce85..aec3ef2 100644
+--- a/tests/test_prediction_scheduler.py
++++ b/tests/test_prediction_scheduler.py
+@@ -110,4 +110,128 @@ class SchedulerTests(unittest.TestCase):
+         self.assertTrue(flags['interrupted'])
+ 
+ 
++
++class MemoryPressureGuardTests(unittest.TestCase):
++    """Only the largest job is killed; peers continue; the victim re-runs alone once."""
++
++    def harness(self, sizes, *, fail_again=False, low_until_killed=True):
++        registry=scheduler.JobRegistry();lock=threading.Lock()
++        kills=[];events=[];recorded={};live={};solo_overlap=[]
++        stop={c:threading.Event() for c in sizes}
++        def execute(case,cancel):
++            cid=case['case_id'];attempt=case.get('attempt',1)
++            with lock:
++                live[cid]=attempt
++                if attempt>1:solo_overlap.append(len(live))
++            registry.register(cid,'job-'+cid,sizes[cid])
++            try:
++                killed=stop[cid].wait(timeout=.05 if attempt>1 else .3)
++            finally:
++                registry.unregister(cid)
++                with lock:live.pop(cid)
++            if killed and registry.pop_pressure_killed(cid):
++                return {'status':'error','error_kind':'host_memory_pressure_killed','exit_code':137}
++            if attempt>1 and fail_again:
++                return {'status':'error','error_kind':'cgroup_oom'}
++            return {'status':'ok','attempt':attempt}
++        def kill(name):
++            cid=name[4:];kills.append(cid)
++            stop[cid].set()
++            if not low_until_killed:return
++        def memory():
++            with lock:running=set(live)
++            pressured=low_until_killed and not kills and len(running)>=2
++            return {'used_bytes':2,'available_bytes':1 if pressured else 40}
++        flags=scheduler.run_cases([{'case_id':c} for c in sizes],execute,
++            lambda c,r:recorded.__setitem__(c['case_id'],(c.get('attempt',1),r)),
++            jobs=len(sizes),threshold_bytes=20,reserve_bytes=6,poll_seconds=.001,launch_interval_seconds=0,
++            memory_reader=memory,notify=lambda e,**kw:events.append((e,kw)),
++            kill_below_available_bytes=4,registry=registry,kill_job=kill,
++            job_memory_reader=lambda job:job['host_pid'],
++            retry_solo=lambda c,r:r.get('error_kind') in ('host_memory_pressure_killed','cgroup_oom'))
++        return flags,kills,events,recorded,solo_overlap
++
++    def test_largest_job_killed_only_and_retried_alone(self):
++        flags,kills,events,recorded,solo_overlap=self.harness({'small':1,'big':30,'mid':5})
++        self.assertEqual(kills,['big'])
++        self.assertEqual(recorded['small'],(1,{'status':'ok','attempt':1}))
++        self.assertEqual(recorded['mid'],(1,{'status':'ok','attempt':1}))
++        self.assertEqual(recorded['big'],(2,{'status':'ok','attempt':2}))
++        self.assertEqual(solo_overlap,[1])
++        self.assertEqual([e for e,_ in events].count('memory_pressure_kill'),1)
++        self.assertEqual([kw['case_id'] for e,kw in events if e=='requeued_solo'],['big'])
++        self.assertFalse(flags['interrupted'] or flags['validation_failed'])
++
++    def test_no_kill_without_pressure(self):
++        _,kills,events,recorded,_=self.harness({'a':1,'b':30},low_until_killed=False)
++        self.assertEqual(kills,[]);self.assertEqual({k:v[0] for k,v in recorded.items()},{'a':1,'b':1})
++
++    def test_retry_happens_at_most_once(self):
++        _,kills,_,recorded,_=self.harness({'a':1,'b':30},fail_again=True)
++        self.assertEqual(kills,['b'])
++        self.assertEqual(recorded['b'],(2,{'status':'error','error_kind':'cgroup_oom'}))
++
++    def test_disabled_guard_never_kills(self):
++        registry=scheduler.JobRegistry();kills=[]
++        def execute(case,cancel):
++            registry.register(case['case_id'],'job',99);time.sleep(.02);registry.unregister(case['case_id'])
++            return {'status':'ok'}
++        scheduler.run_cases([{'case_id':'a'},{'case_id':'b'}],execute,lambda c,r:None,jobs=2,threshold_bytes=20,
++            reserve_bytes=6,poll_seconds=.001,launch_interval_seconds=0,
++            memory_reader=lambda:{'used_bytes':2,'available_bytes':0 if registry.snapshot() else 40},
++            kill_below_available_bytes=0,registry=registry,kill_job=kills.append,job_memory_reader=lambda j:j['host_pid'])
++        self.assertEqual(kills,[])
++
++    def test_victim_is_largest_measurable(self):
++        jobs=[{'case_id':'a','name':'a','host_pid':1},{'case_id':'b','name':'b','host_pid':2},
++              {'case_id':'c','name':'c','host_pid':3}]
++        victim=scheduler.choose_victim(jobs,lambda j:{1:10,2:None,3:7}[j['host_pid']])
++        self.assertEqual((victim['case_id'],victim['memory_bytes']),('a',10))
++        self.assertIsNone(scheduler.choose_victim(jobs,lambda j:None))
++
++    def test_job_ram_prefers_anon_over_page_cache(self):
++        import tempfile
++        with tempfile.TemporaryDirectory() as directory:
++            cg=Path(directory)
++            (cg/'memory.stat').write_text('anon 7000\nfile 900000\n')
++            (cg/'memory.current').write_text('907000\n')
++            with patch.object(scheduler,'_cgroup_dirs',return_value=[('v2',cg)]):
++                self.assertEqual(scheduler.job_ram_bytes(123),7000)
++            (cg/'memory.stat').write_text('file 1\n')
++            with patch.object(scheduler,'_cgroup_dirs',return_value=[('v2',cg)]):
++                self.assertEqual(scheduler.job_ram_bytes(123),907000)
++        self.assertIsNone(scheduler.job_ram_bytes(None))
++
++    def test_cgroup_path_parsing(self):
++        with patch.object(scheduler.Path,'read_text',return_value='0::/system.slice/docker-abc.scope\n'):
++            self.assertEqual(scheduler._cgroup_dirs(5),[('v2',Path('/sys/fs/cgroup/system.slice/docker-abc.scope'))])
++        with patch.object(scheduler.Path,'read_text',return_value='4:cpu,cpuacct:/docker/x\n9:memory:/docker/x\n'):
++            self.assertEqual(scheduler._cgroup_dirs(5),[('v1',Path('/sys/fs/cgroup/memory/docker/x'))])
++
++
++class RetryPolicyTests(unittest.TestCase):
++    def setUp(self):
++        import run_prediction_recovery as recovery
++        self.reason=recovery.retry_reason
++        self.recovery=recovery
++
++    def test_policy(self):
++        g=1024**3
++        self.assertEqual(self.reason({'status':'error','error_kind':'host_memory_pressure_killed'},1,32*g,32*g),
++                         'killed_as_largest_job_under_host_memory_pressure')
++        self.assertIsNone(self.reason({'status':'error','error_kind':'cgroup_oom'},1,32*g,32*g))
++        self.assertEqual(self.reason({'status':'error','error_kind':'cgroup_oom'},1,40*g,32*g),'job_limit_raised_for_solo_retry')
++        self.assertEqual(self.reason({'status':'error','error_kind':'process_exit_without_json','exit_code':137},1,32*g,32*g),
++                         'sigkill_while_sharing_host')
++        for kind in ('timeout','cancelled'):
++            self.assertIsNone(self.reason({'status':'error','error_kind':kind,'exit_code':137},1,32*g,32*g))
++        self.assertIsNone(self.reason({'status':'error','error_kind':'host_memory_pressure_killed'},2,32*g,32*g))
++        self.assertIsNone(self.reason({'status':'error','error_kind':'predictor_error','exit_code':1},1,32*g,32*g))
++        self.assertIsNone(self.reason({'status':'ok'},1,32*g,32*g))
++
++    def test_job_containers_prefer_oom_kill_over_host_processes(self):
++        command=self.recovery.job_command('image','/w','/c',8*1024**3,4)
++        self.assertEqual(command[command.index('--oom-score-adj')+1],'1000')
++
++
+ if __name__=='__main__':unittest.main()
+diff --git a/tools/prediction_scheduler.py b/tools/prediction_scheduler.py
+index 14887f4..63a94b2 100644
+--- a/tools/prediction_scheduler.py
++++ b/tools/prediction_scheduler.py
+@@ -22,61 +22,197 @@ def admission_allowed(memory, threshold_bytes, reserve_bytes):
+     return memory['used_bytes'] <= threshold_bytes and memory['available_bytes'] >= reserve_bytes
+ 
+ 
++def _cgroup_dirs(host_pid):
++    """Return (version, directory) pairs for the memory cgroup of a host PID."""
++    dirs = []
++    for line in Path(f'/proc/{host_pid}/cgroup').read_text().splitlines():
++        _, controllers, path = line.split(':', 2)
++        if controllers == '':
++            dirs.append(('v2', Path('/sys/fs/cgroup') / path.lstrip('/')))
++        elif 'memory' in controllers.split(','):
++            dirs.append(('v1', Path('/sys/fs/cgroup/memory') / path.lstrip('/')))
++    return dirs
++
++
++def job_ram_bytes(host_pid):
++    """Anonymous (non-reclaimable) RAM of the job's cgroup; page cache is excluded.
++
++    Falls back to cgroup usage and then to the PID's VmRSS. Returns None when the
++    process is gone, so a finished job is never selected as a kill victim.
++    """
++    if not host_pid:
++        return None
++    try:
++        for version, directory in _cgroup_dirs(host_pid):
++            stat_keys = ('anon',) if version == 'v2' else ('total_rss', 'rss')
++            try:
++                stats = dict(line.split() for line in (directory / 'memory.stat').read_text().splitlines())
++                for key in stat_keys:
++                    if key in stats:
++                        return int(stats[key])
++            except (OSError, ValueError):
++                pass
++            usage = 'memory.current' if version == 'v2' else 'memory.usage_in_bytes'
++            try:
++                return int((directory / usage).read_text())
++            except (OSError, ValueError):
++                pass
++        for line in Path(f'/proc/{host_pid}/status').read_text().splitlines():
++            if line.startswith('VmRSS:'):
++                return int(line.split()[1]) * 1024
++    except (OSError, ValueError):
++        return None
++    return None
++
++
++class JobRegistry:
++    """Thread-safe map of running case IDs to their container name and host PID."""
++
++    def __init__(self):
++        self._lock = threading.Lock()
++        self._jobs = {}
++        self._pressure_killed = set()
++
++    def register(self, case_id, name, host_pid=None):
++        with self._lock:
++            self._jobs[case_id] = {'case_id': case_id, 'name': name, 'host_pid': host_pid}
++
++    def unregister(self, case_id):
++        with self._lock:
++            self._jobs.pop(case_id, None)
++
++    def snapshot(self):
++        with self._lock:
++            return [dict(job) for job in self._jobs.values()]
++
++    def mark_pressure_killed(self, case_id):
++        with self._lock:
++            self._pressure_killed.add(case_id)
++
++    def pop_pressure_killed(self, case_id):
++        """True once per pressure kill, so a solo retry is not mislabelled."""
++        with self._lock:
++            killed = case_id in self._pressure_killed
++            self._pressure_killed.discard(case_id)
++            return killed
++
++
++def choose_victim(jobs, job_memory_reader):
++    """Largest measured RAM user among registered jobs, or None if none is measurable."""
++    measured = []
++    for job in jobs:
++        usage = job_memory_reader(job)
++        if usage is not None:
++            measured.append((usage, job))
++    if not measured:
++        return None
++    usage, job = max(measured, key=lambda item: item[0])
++    return dict(job, memory_bytes=usage)
++
++
+ def run_cases(cases, execute, record, *, jobs, threshold_bytes, reserve_bytes,
+               poll_seconds=1, launch_interval_seconds=5, memory_reader=host_memory,
+-              notify=lambda event, **fields: None):
++              notify=lambda event, **fields: None,
++              kill_below_available_bytes=0, registry=None, kill_job=None,
++              job_memory_reader=lambda job: job_ram_bytes(job.get('host_pid')),
++              retry_solo=lambda case, result: False, kill_grace_seconds=30):
+     """Only this thread admits/writes results; workers own their job containers.
+ 
+     record() returns False to stop admission (e.g. an exact-reference mismatch).
+     Cancellation reaches every worker, then all completed/cancelled results drain.
+     The threshold is an admission rule, not a cap on future aggregate RAM growth.
++
++    Memory-pressure guard: while jobs run, if host MemAvailable drops below
++    kill_below_available_bytes, only the registered job using the most RAM is
++    killed (one at a time). retry_solo(case, result) decides whether that case is
++    re-run later with no other job active; each case is retried at most once.
+     """
+     pending = list(cases)
++    solo = []
++    retried = set()
+     active = {}
+     cancel = threading.Event()
+     interrupted = validation_failed = False
+     last_launch = float('-inf')
+     waiting = None
++    kill_in_flight = None
++    guard = bool(kill_below_available_bytes) and registry is not None and kill_job is not None
+     pool = ThreadPoolExecutor(max_workers=jobs)
++
++    def running():
++        return [c['case_id'] for c in active.values()]
++
+     try:
+-        while pending or active:
++        while pending or solo or active:
+             try:
+                 for future in [f for f in active if f.done()]:
+                     case = active.pop(future)
+                     result = future.result()
++                    if kill_in_flight and kill_in_flight[0] == case['case_id']:
++                        kill_in_flight = None
++                    if (not cancel.is_set() and case['case_id'] not in retried
++                            and retry_solo(case, result)):
++                        retried.add(case['case_id'])
++                        solo.append(dict(case, attempt=case.get('attempt', 1)+1))
++                        notify('requeued_solo', case_id=case['case_id'], error_kind=result.get('error_kind'),
++                               running=running(), pending=len(pending)+len(solo))
++                        continue
+                     if record(case, result) is False:
+                         validation_failed = True
+                         cancel.set()
+                     notify('finished', case_id=case['case_id'],
+-                           running=[c['case_id'] for c in active.values()], pending=len(pending))
++                           running=running(), pending=len(pending)+len(solo))
+                 if cancel.is_set():
+                     pending.clear()
+-                if pending and len(active) < jobs:
++                    solo.clear()
++                if guard and active:
++                    if kill_in_flight and time.monotonic()-kill_in_flight[1] > kill_grace_seconds:
++                        kill_in_flight = None
++                    if kill_in_flight is None:
++                        memory = memory_reader()
++                        if memory['available_bytes'] < kill_below_available_bytes:
++                            victim = choose_victim(registry.snapshot(), job_memory_reader)
++                            if victim is not None:
++                                registry.mark_pressure_killed(victim['case_id'])
++                                kill_in_flight = (victim['case_id'], time.monotonic())
++                                notify('memory_pressure_kill', case_id=victim['case_id'],
++                                       container=victim['name'], job_memory_bytes=victim['memory_bytes'],
++                                       memory=memory, running=running(), pending=len(pending)+len(solo))
++                                try:
++                                    kill_job(victim['name'])
++                                except Exception as exc:  # the container may already be gone
++                                    notify('memory_pressure_kill_failed', case_id=victim['case_id'],
++                                           error=f'{type(exc).__name__}: {exc}', running=running(),
++                                           pending=len(pending)+len(solo))
++                # Solo retries start only after the normal queue is drained and nothing else runs.
++                queue = pending if pending else (solo if not active else None)
++                if queue and len(active) < jobs and kill_in_flight is None:
+                     memory = memory_reader()
+                     allowed = admission_allowed(memory, threshold_bytes, reserve_bytes)
+                     staggered = active and time.monotonic()-last_launch < launch_interval_seconds
+                     reason = 'memory' if not allowed else 'launch_interval' if staggered else None
+                     if reason is None:
+-                        case = pending.pop(0)
++                        case = queue.pop(0)
+                         future = pool.submit(execute, case, cancel)
+                         active[future] = case
+                         last_launch = time.monotonic()
+                         waiting = None
+-                        notify('start', case_id=case['case_id'], memory=memory,
+-                               running=[c['case_id'] for c in active.values()], pending=len(pending))
++                        notify('start', case_id=case['case_id'], attempt=case.get('attempt', 1), memory=memory,
++                               running=running(), pending=len(pending)+len(solo))
+                     elif waiting != reason:
+                         waiting = reason
+                         notify('wait', reason=reason, memory=memory,
+-                               running=[c['case_id'] for c in active.values()], pending=len(pending))
++                               running=running(), pending=len(pending)+len(solo))
+                 if active:
+                     wait(active, timeout=poll_seconds, return_when=FIRST_COMPLETED)
+-                elif pending:
++                elif pending or solo:
+                     time.sleep(poll_seconds)
+             except KeyboardInterrupt:
+                 interrupted = True
+                 cancel.set()
+                 pending.clear()
+-                notify('cancellation_requested', running=[c['case_id'] for c in active.values()], pending=0)
++                solo.clear()
++                notify('cancellation_requested', running=running(), pending=0)
+     finally:
+         cancel.set()
+         pool.shutdown(wait=True)
+diff --git a/tools/run_prediction_recovery.py b/tools/run_prediction_recovery.py
+index 73ef034..e0d82c6 100644
+--- a/tools/run_prediction_recovery.py
++++ b/tools/run_prediction_recovery.py
+@@ -18,7 +18,7 @@ import time
+ import uuid
+ 
+ from run_prediction_suite import ROOT, CONFIG, prediction_json, request, save, select_cases
+-from prediction_scheduler import host_memory, run_cases
++from prediction_scheduler import JobRegistry, host_memory, job_ram_bytes, run_cases
+ 
+ SOURCES = ('predict_vram.py', 'cpu_tensor_trace.py', 'inference_trace_runtime.py',
+            'vram_policy.py', 'gpu_overheads.json')
+@@ -87,7 +87,27 @@ def stop_job(name):
+         docker('kill', name, timeout=15)
+ 
+ 
+-def run_job(name, command, payload, log, timeout, cancel_event=None):
++def kill_job(name):
++    """Immediate SIGKILL so the kernel reclaims the job's RAM without a grace period."""
++    docker('kill', name, timeout=15)
++
++
++def retry_reason(result, attempt, solo_memory_bytes, memory_bytes):
++    """Why a failed first attempt deserves one solo re-run, or None."""
++    if attempt != 1 or result.get('status') == 'ok' or result.get('error_kind') in ('cancelled', 'timeout'):
++        return None
++    if result.get('error_kind') == 'host_memory_pressure_killed':
++        return 'killed_as_largest_job_under_host_memory_pressure'
++    if result.get('error_kind') == 'cgroup_oom':
++        # Its own limit was hit; retrying alone only helps with a larger limit.
++        return 'job_limit_raised_for_solo_retry' if solo_memory_bytes > memory_bytes else None
++    if 137 in (result.get('exit_code'), result.get('container_exit_code')):
++        # SIGKILL not sent by this runner: most likely the host kernel OOM killer.
++        return 'sigkill_while_sharing_host'
++    return None
++
++
++def run_job(name, command, payload, log, timeout, cancel_event=None, on_start=None):
+     """The container PID 1 is the predictor, so Docker can attribute OOM kills."""
+     proc = None
+     timed_out = cancelled = False
+@@ -119,6 +139,8 @@ def run_job(name, command, payload, log, timeout, cancel_event=None):
+                     if 'Running' not in active or proc.poll() is not None:
+                         break
+                     time.sleep(0.05)
++                if on_start is not None:
++                    on_start(metadata)
+                 if cancel_event is None:
+                     proc.communicate(json.dumps(payload), timeout=timeout)
+                 else:
+@@ -168,8 +190,10 @@ def run_job(name, command, payload, log, timeout, cancel_event=None):
+ 
+ 
+ def job_command(image, work, cache, memory_bytes, threads):
++    # oom-score-adj 1000: if the host kernel OOM killer still fires, it picks a job
++    # process (the one with the most RAM among equally adjusted jobs), not sshd/dockerd.
+     args = ['-i', '--entrypoint', 'python', '--network', 'none', '--memory', str(memory_bytes),
+-            '--memory-swap', str(memory_bytes), '--cpus', str(threads),
++            '--memory-swap', str(memory_bytes), '--oom-score-adj', '1000', '--cpus', str(threads),
+             '--mount', f'type=bind,src={work},dst=/work,readonly',
+             '--mount', f'type=bind,src={cache},dst=/root/.cache/huggingface,readonly']
+     # A separate directory avoids creating missing mountpoints under read-only /work.
+@@ -236,12 +260,21 @@ def main():
+     parser.add_argument('--launch-interval-seconds', type=float, default=5, help='Minimum stagger between concurrent starts; does not delay an idle queue')
+     parser.add_argument('--memory-gib', type=float, default=32)
+     parser.add_argument('--host-reserve-gib', type=float, default=6)
++    parser.add_argument('--kill-below-available-gib', type=float, default=4,
++                        help='While jobs run, if host MemAvailable falls below this, SIGKILL only the job using the most RAM; 0 disables')
++    parser.add_argument('--solo-memory-gib', type=float,
++                        help='Per-job limit when a pressure-killed/OOM case is re-run alone after the queue drains; default --memory-gib')
+     parser.add_argument('--timeout-seconds', type=float, default=3600)
+     args = parser.parse_args()
++    if args.solo_memory_gib is None:
++        args.solo_memory_gib = args.memory_gib
+     if (args.threads < 1 or args.jobs < 1 or args.memory_gib <= 0 or args.host_reserve_gib < 0
+             or args.timeout_seconds <= 0 or args.start_below_used_gib < 0
+-            or args.poll_seconds <= 0 or args.launch_interval_seconds < 0):
++            or args.poll_seconds <= 0 or args.launch_interval_seconds < 0
++            or args.kill_below_available_gib < 0 or args.solo_memory_gib < args.memory_gib):
+         parser.error('Invalid resource limits')
++    if args.kill_below_available_gib and args.kill_below_available_gib >= args.host_reserve_gib:
++        parser.error('--kill-below-available-gib must be below --host-reserve-gib, or admission and kill would oscillate')
+     out = args.output_root.resolve()
+     if out.exists():
+         parser.error('Use a new output directory; existing results are never overwritten')
+@@ -281,8 +314,10 @@ def main():
+                                       model, pins[model]['revision'], timeout=120).stdout)
+                for model in dict.fromkeys(c['model'] for c in cases)}
+     memory_bytes = int(args.memory_gib * GIB)
++    solo_memory_bytes = int(args.solo_memory_gib * GIB)
+     reserve_bytes = int(args.host_reserve_gib * GIB)
+     threshold_bytes = int(args.start_below_used_gib * GIB)
++    kill_below_bytes = int(args.kill_below_available_gib * GIB)
+     if reserve_bytes >= host_memory()['total_bytes']:
+         raise RuntimeError('Host reserve must be smaller than total host RAM')
+     token = uuid.uuid4().hex
+@@ -301,6 +336,11 @@ def main():
+                 'memory_usage_definition': 'MemTotal-MemAvailable',
+                 'poll_seconds': args.poll_seconds, 'launch_interval_seconds': args.launch_interval_seconds,
+                 'scheduler_sha256': hashlib.sha256((ROOT/'tools/prediction_scheduler.py').read_bytes()).hexdigest(),
++                'pressure_kill_below_available_bytes': kill_below_bytes,
++                'pressure_kill_policy': 'sigkill_largest_job_anon_ram_one_at_a_time',
++                'solo_retry_memory_limit_bytes': solo_memory_bytes,
++                'job_oom_score_adj': 1000,
++                'pressure_kills': 0, 'solo_retries': 0,
+                 'reused_snapshot': args.snapshot_image,
+                 'selection': [c['case_id'] for c in cases], 'started_unix': time.time()}
+     save(out/'manifest.json', manifest)
+@@ -319,27 +359,63 @@ def main():
+         manifest.update(status='running', snapshot_image_id=image_id)
+         save(out/'manifest.json', manifest)
+         numbers = {c['case_id']: i for i, c in enumerate(cases, 1)}
++        registry = JobRegistry()
++        first_attempts = {}
++
++        def job_ram(job):
++            pid = job.get('host_pid')
++            if not pid:
++                # The PID may not have been visible during the short start-up poll.
++                try:
++                    pid = int(docker('inspect', '--format', '{{.State.Pid}}', job['name'], timeout=15).stdout.strip())
++                except (subprocess.SubprocessError, OSError, ValueError):
++                    return None
++            return job_ram_bytes(pid)
+ 
+         def execute(case, cancel_event):
+             cid = case['case_id']
++            attempt = case.get('attempt', 1)
++            limit = memory_bytes if attempt == 1 else solo_memory_bytes
++            suffix = '' if attempt == 1 else f'.attempt{attempt}'
+             payload = request(case, configs[case['model']], args.threads)
+-            save(out/(cid+'.input.json'), {'case_id': cid, 'revision': pins[case['model']]['revision'], 'request': payload})
+-            print(f'START {cid}', flush=True)
++            if attempt == 1:
++                save(out/(cid+'.input.json'), {'case_id': cid, 'revision': pins[case['model']]['revision'], 'request': payload})
++            print(f'START {cid}' + ('' if attempt == 1 else f' (solo retry, limit {limit/GIB:.1f} GiB)'), flush=True)
+             case_start = time.monotonic()
++            name = 'cgf-cpu-' + token[:12] + '-' + str(numbers[cid]) + ('' if attempt == 1 else f'-a{attempt}')
+             try:
+-                result = run_job('cgf-cpu-' + token[:12] + '-' + str(numbers[cid]),
+-                                 job_command(image_id, work, cache, memory_bytes, args.threads),
+-                                 payload, out/(cid+'.log'), args.timeout_seconds, cancel_event)
++                result = run_job(name, job_command(image_id, work, cache, limit, args.threads),
++                                 payload, out/(cid+suffix+'.log'), args.timeout_seconds, cancel_event,
++                                 on_start=lambda meta: registry.register(cid, name, meta.get('host_pid')))
+             except Exception as exc:
+                 result = {'status': 'error', 'error_kind': 'runner_error', 'error': f'{type(exc).__name__}: {exc}'}
+                 if isinstance(exc, subprocess.CalledProcessError):
+                     result['docker_stderr'] = (exc.stderr or '')[-4000:]
+-            result.update(case_id=cid, revision=pins[case['model']]['revision'],
+-                          runner_elapsed_seconds=time.monotonic()-case_start)
++            finally:
++                registry.unregister(cid)
++            if registry.pop_pressure_killed(cid) and result.get('status') != 'ok':
++                result.update(status='error', error_kind='host_memory_pressure_killed',
++                              error='Killed by the runner as the largest-RAM job while host MemAvailable '
++                                    f'was below {args.kill_below_available_gib:g} GiB')
++            result.update(case_id=cid, revision=pins[case['model']]['revision'], attempt=attempt,
++                          memory_limit_bytes=limit, runner_elapsed_seconds=time.monotonic()-case_start)
+             return result
+ 
++        def retry_solo(case, result):
++            reason = retry_reason(result, case.get('attempt', 1), solo_memory_bytes, memory_bytes)
++            if reason is None:
++                return False
++            first_attempts[case['case_id']] = {key: result.get(key) for key in (
++                'status', 'error_kind', 'error', 'exit_code', 'container_exit_code', 'oom_killed',
++                'stage', 'memory_limit_bytes', 'runner_elapsed_seconds')}
++            first_attempts[case['case_id']].update(retry_reason=reason, log=case['case_id']+'.log')
++            manifest['solo_retries'] += 1
++            return True
++
+         def record(case, result):
+             cid = case['case_id']
++            if cid in first_attempts:
++                result['previous_attempt'] = first_attempts.pop(cid)
+             payload = request(case, configs[case['model']], args.threads)
+             comparison = compare_reference(cid, payload, result, args.compare_with, pins[case['model']]['revision'])
+             result['reference_comparison'] = comparison
+@@ -366,15 +442,33 @@ def main():
+                 print(f'WAIT host used={fields["memory"]["used_bytes"]/GIB:.2f} GiB; '
+                       f'admission limit={args.start_below_used_gib:.2f} GiB; '
+                       f'running={len(fields["running"])} pending={fields["pending"]}', flush=True)
++            elif event == 'memory_pressure_kill':
++                manifest['pressure_kills'] += 1
++                save(out/'manifest.json', manifest)
++                print(f'KILL {fields["case_id"]}: largest job ({fields["job_memory_bytes"]/GIB:.2f} GiB) while host '
++                      f'available={fields["memory"]["available_bytes"]/GIB:.2f} GiB < '
++                      f'{args.kill_below_available_gib:g} GiB; other jobs keep running', flush=True)
++            elif event == 'requeued_solo':
++                print(f'REQUEUE {fields["case_id"]} ({fields["error_kind"]}): re-run alone after the queue drains', flush=True)
+ 
+         flags = run_cases(cases, execute, record, jobs=args.jobs,
+                           threshold_bytes=threshold_bytes, reserve_bytes=reserve_bytes,
+                           poll_seconds=args.poll_seconds, launch_interval_seconds=args.launch_interval_seconds,
+-                          notify=notify)
++                          notify=notify, kill_below_available_bytes=kill_below_bytes, registry=registry,
++                          kill_job=kill_job, job_memory_reader=job_ram, retry_solo=retry_solo)
+         interrupted, validation_failed = flags['interrupted'], flags['validation_failed']
+     except KeyboardInterrupt:
+         interrupted = True
+     finally:
++        # Safety net: no job container of this run may outlive the runner.
++        try:
++            leftovers = subprocess.run(['docker', 'ps', '-aq', '--filter', f'name=cgf-cpu-{token[:12]}-'],
++                                       capture_output=True, text=True, timeout=30).stdout.split()
++            if leftovers:
++                subprocess.run(['docker', 'rm', '-f', *leftovers], capture_output=True, timeout=60)
++            manifest['leftover_containers_removed'] = len(leftovers)
++        except (subprocess.SubprocessError, OSError) as exc:
++            manifest['leftover_container_check_error'] = f'{type(exc).__name__}: {exc}'
+         if snapshot:
+             subprocess.run(['docker', 'image', 'rm', image], capture_output=True, timeout=60)
+         manifest.update(status='interrupted' if interrupted else 'validation_mismatch' if validation_failed else

@@ -1,0 +1,220 @@
+{
+  "status": "ok",
+  "exit_code": 0,
+  "container_exit_code": 0,
+  "oom_killed": false,
+  "stage": "allocator_simulation",
+  "input": {
+    "model": "google-t5/t5-base",
+    "type": "llm",
+    "batch_size": 1,
+    "seq_len": null,
+    "encoder_seq_len": 256,
+    "decoder_seq_len": 32,
+    "resolution": null,
+    "dtype": "fp16",
+    "mode": "generate",
+    "max_new_tokens": 64
+  },
+  "prediction_version": "4-native-inference-single-request",
+  "predicted_allocated_bytes": 478562816,
+  "predicted_reserved_bytes": 507510784,
+  "required_vram_bytes": 836763648,
+  "required_vram_gb": 0.78,
+  "required_vram_scope": "maximum_among_calibrated_gpus",
+  "target_gpu_estimate": null,
+  "gpu_requirements": {
+    "NVIDIA T4": {
+      "status": "ok",
+      "gpu": "NVIDIA T4",
+      "allocated_bytes": 478562816,
+      "reserved_bytes": 507510784,
+      "outside_estimate_bytes": 138412032,
+      "outside_observed_upper_bytes": 138412032,
+      "estimated_nvml_bytes": 645922816,
+      "required_vram_bytes": 645922816,
+      "required_vram_gb": 0.6015625,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "595.112.07",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    },
+    "NVIDIA A10G": {
+      "status": "ok",
+      "gpu": "NVIDIA A10G",
+      "allocated_bytes": 478562816,
+      "reserved_bytes": 507510784,
+      "outside_estimate_bytes": 322961408,
+      "outside_observed_upper_bytes": 325058560,
+      "estimated_nvml_bytes": 830472192,
+      "required_vram_bytes": 832569344,
+      "required_vram_gb": 0.775390625,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "595.112.07",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    },
+    "NVIDIA L4": {
+      "status": "ok",
+      "gpu": "NVIDIA L4",
+      "allocated_bytes": 478562816,
+      "reserved_bytes": 507510784,
+      "outside_estimate_bytes": 243269632,
+      "outside_observed_upper_bytes": 245366784,
+      "estimated_nvml_bytes": 750780416,
+      "required_vram_bytes": 752877568,
+      "required_vram_gb": 0.701171875,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "595.112.07",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    },
+    "NVIDIA GeForce RTX 3090": {
+      "status": "ok",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "allocated_bytes": 478562816,
+      "reserved_bytes": 507510784,
+      "outside_estimate_bytes": 327155712,
+      "outside_observed_upper_bytes": 329252864,
+      "estimated_nvml_bytes": 834666496,
+      "required_vram_bytes": 836763648,
+      "required_vram_gb": 0.779296875,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "570.211.01",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    }
+  },
+  "breakdown_bytes": {
+    "predicted_allocated_native_dtype": 478562816,
+    "predicted_reserved_native_dtype": 507510784,
+    "empirical_tensor_correction": 0,
+    "fixed_margin": 0,
+    "outside_gpu_estimate": null
+  },
+  "model_storage_bytes": 445807104,
+  "trace_summary": {
+    "measured_invocations": 1,
+    "warmup_invocations": 0,
+    "request_policy": "cold_single_request",
+    "allocator_initial_state": "empty_plus_resident_model_and_inputs",
+    "self_kv_storage_bytes": 3502080,
+    "cross_kv_storage_bytes": 9437184,
+    "self_kv_logical_bytes": 3502080,
+    "cross_kv_logical_bytes": 9437184,
+    "total_profiler_events": 812691,
+    "allocator_history_recorded": false,
+    "tensor_lifetime_count": 85124,
+    "resident_storage_bytes": 445807104,
+    "input_storage_bytes": 4352,
+    "cpu_device_only": true,
+    "method": "native_inference_lifetimes_into_xmem_allocator",
+    "cross_kv_policy": "traced_with_full_generate_no_analytic_addition"
+  },
+  "actual_input_shapes": {
+    "input_ids": [
+      1,
+      256
+    ],
+    "attention_mask": [
+      1,
+      256
+    ],
+    "decoder_input_ids": [
+      1,
+      32
+    ]
+  },
+  "inference_path": "full_generate_with_cache",
+  "dtype_policy": "native_cpu_no_rescale",
+  "environment": {
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cpu_threads": 4,
+    "attention": "eager",
+    "seed": 20261006
+  },
+  "elapsed_seconds": 37.6,
+  "warnings": [
+    "CPU-traced tensors and xMem allocator simulation do not capture every GPU-specific kernel workspace",
+    "GPU process overhead is empirically calibrated for the recorded software/driver scope; it is not a universal hardware constant",
+    "Native CPU dtype is used without precision fallback; unsupported CPU operations fail explicitly"
+  ],
+  "container": {
+    "container_id": "2f7bfa1d590a6efdc18275bde6d6f0d896724ecd6ff229c02d7615db7e0a290e",
+    "container_name": "cgf-cpu-f85095e08b51-249",
+    "memory_limit_bytes": 34359738368,
+    "memory_swap_bytes": 34359738368,
+    "mounts": [
+      {
+        "Type": "bind",
+        "Source": "/home/inuos/xmem-work",
+        "Destination": "/work",
+        "Mode": "",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/inuos/.cache/huggingface",
+        "Destination": "/root/.cache/huggingface",
+        "Mode": "",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/inuos/CloudGPUFit-cpu-singlepass-20261108",
+        "Destination": "/recovery",
+        "Mode": "",
+        "RW": false,
+        "Propagation": "rprivate"
+      }
+    ],
+    "nano_cpus": 4000000000,
+    "network_mode": "none",
+    "host_pid": 624332,
+    "host_cgroup": "0::/system.slice/docker-2f7bfa1d590a6efdc18275bde6d6f0d896724ecd6ff229c02d7615db7e0a290e.scope\n"
+  },
+  "container_state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-11-08T18:24:26.999941973Z",
+    "FinishedAt": "2026-11-08T18:25:07.351847591Z"
+  },
+  "case_id": "core__text_encdec__medium__fp16__07",
+  "revision": "a9723ea7f1b39c1eae772870f3b547bf6ef7e6c1",
+  "attempt": 1,
+  "memory_limit_bytes": 34359738368,
+  "runner_elapsed_seconds": 40.984585139900446,
+  "reference_comparison": {
+    "status": "not_requested"
+  }
+}

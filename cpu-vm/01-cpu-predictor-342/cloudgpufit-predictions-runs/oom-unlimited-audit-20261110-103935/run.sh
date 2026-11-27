@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -o pipefail
+cd /home/inuos/CloudGPUFit-cpu-singlepass-20261108 || exit 1
+python3 -u tools/run_prediction_recovery.py --output-root /home/inuos/cloudgpufit-predictions/oom-unlimited-20261110-103935 --snapshot-image cloudgpufit-cpu-validation:20261108 --jobs 1 --memory-gib 0 --solo-memory-gib 0 --kill-below-available-gib 0 --threads 4 --host-reserve-gib 6 --start-below-used-gib 20 --timeout-seconds 21600 --case-id core__decoder_llm__large__bf16__11 --case-id core__decoder_llm__large__bf16__12 --case-id core__decoder_llm__large__bf16__14 --case-id core__decoder_llm__large__fp16__11 --case-id core__decoder_llm__large__fp16__14 --case-id core__decoder_llm__large__fp32__10 --case-id core__decoder_llm__large__fp32__14 --case-id core__decoder_llm__medium__fp16__12 --case-id core__decoder_llm__medium__fp32__11 --case-id core__decoder_llm__medium__fp32__14 --case-id core__text_encdec__large__bf16__13 --case-id core__text_encdec__large__fp16__12 --case-id core__text_encdec__large__fp16__13 --case-id core__text_encdec__large__fp32__03 --case-id core__text_encdec__large__fp32__11 --case-id core__text_encdec__large__fp32__12 2>&1 | tee /home/inuos/cloudgpufit-predictions/oom-unlimited-audit-20261110-103935/console.log
+cgf_exit=${PIPESTATUS[0]}
+printf "%s\n" "$cgf_exit" > /home/inuos/cloudgpufit-predictions/oom-unlimited-audit-20261110-103935/exit-code.txt
+exit "$cgf_exit"

@@ -1,0 +1,42 @@
+Using Mixed Precision (FP32) Training loop.
+Using Transformer INFERENCE loop.
+[W1026 09:23:14.317410228 CPUAllocator.cpp:245] Memory block of unknown size was allocated before the profiling started, profiler results will not include the deallocation event
+ERROR:2026-10-26 09:23:15 3393:3393 DeviceProperties.cpp:47] gpuGetDeviceCount failed with code 35
+======================== Basic Information ========================
+Batch Size: 1
+Max GPU Memory: 24 GB
+Runtime: 44.26 s
+======================== Estimated Result ========================
+OOM: False
+Estimated Peak GPU Memory: 1.42 GB
+Estimated Peak Tensor Memory: 1.40 GB
+{
+  "status": "ok",
+  "input": {
+    "model": "openai-community/gpt2-medium",
+    "type": "llm",
+    "batch_size": 1,
+    "seq_len": 256,
+    "encoder_seq_len": null,
+    "decoder_seq_len": null,
+    "resolution": null,
+    "dtype": "fp16",
+    "mode": "generate",
+    "max_new_tokens": 64
+  },
+  "breakdown_bytes": {
+    "param_bytes_fp32": 1444458592,
+    "predicted_allocated_fp32": 1497950208,
+    "predicted_allocated_scaled": 748975104,
+    "after_underestimate_correction": 765752320,
+    "kv_cache_estimate": 31457280,
+    "fixed_margin": 0
+  },
+  "required_vram_bytes": 797209600,
+  "required_vram_gb": 0.74,
+  "elapsed_seconds": 64.0,
+  "warnings": [
+    "VRAM estimate excludes unused allocator cache, CUDA context, and other non-tensor GPU memory; no fixed safety margin is added",
+    "mode=generate is EXPERIMENTAL: the KV cache is estimated analytically rather than traced, and tends to overestimate"
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "status": "ok",
+  "input": {
+    "model": "google-t5/t5-small",
+    "type": "llm",
+    "batch_size": 2,
+    "seq_len": null,
+    "encoder_seq_len": 512,
+    "decoder_seq_len": 1,
+    "resolution": null,
+    "dtype": "fp16",
+    "mode": "generate",
+    "max_new_tokens": 128
+  },
+  "prediction_version": "3-native-inference",
+  "predicted_allocated_bytes": 178316288,
+  "predicted_reserved_bytes": 211812352,
+  "required_vram_bytes": 541065216,
+  "required_vram_gb": 0.5,
+  "required_vram_scope": "maximum_among_calibrated_gpus",
+  "target_gpu_estimate": null,
+  "gpu_requirements": {
+    "NVIDIA T4": {
+      "status": "ok",
+      "gpu": "NVIDIA T4",
+      "allocated_bytes": 178316288,
+      "reserved_bytes": 211812352,
+      "outside_estimate_bytes": 138412032,
+      "outside_observed_upper_bytes": 138412032,
+      "estimated_nvml_bytes": 350224384,
+      "required_vram_bytes": 350224384,
+      "required_vram_gb": 0.326171875,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "595.112.07",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    },
+    "NVIDIA A10G": {
+      "status": "ok",
+      "gpu": "NVIDIA A10G",
+      "allocated_bytes": 178316288,
+      "reserved_bytes": 211812352,
+      "outside_estimate_bytes": 322961408,
+      "outside_observed_upper_bytes": 325058560,
+      "estimated_nvml_bytes": 534773760,
+      "required_vram_bytes": 536870912,
+      "required_vram_gb": 0.5,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "595.112.07",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    },
+    "NVIDIA L4": {
+      "status": "ok",
+      "gpu": "NVIDIA L4",
+      "allocated_bytes": 178316288,
+      "reserved_bytes": 211812352,
+      "outside_estimate_bytes": 243269632,
+      "outside_observed_upper_bytes": 245366784,
+      "estimated_nvml_bytes": 455081984,
+      "required_vram_bytes": 457179136,
+      "required_vram_gb": 0.42578125,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "595.112.07",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    },
+    "NVIDIA GeForce RTX 3090": {
+      "status": "ok",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "allocated_bytes": 178316288,
+      "reserved_bytes": 211812352,
+      "outside_estimate_bytes": 327155712,
+      "outside_observed_upper_bytes": 329252864,
+      "estimated_nvml_bytes": 538968064,
+      "required_vram_bytes": 541065216,
+      "required_vram_gb": 0.50390625,
+      "policy": "simulated_reserved_plus_training_observed_upper",
+      "calibration_id": "outside-bd902817a45c2b20",
+      "calibration_scope": {
+        "torch": "2.6.0+cu124",
+        "transformers": "4.52.4",
+        "cuda_runtime": "12.4",
+        "driver": "570.211.01",
+        "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032"
+      }
+    }
+  },
+  "breakdown_bytes": {
+    "predicted_allocated_native_dtype": 178316288,
+    "predicted_reserved_native_dtype": 211812352,
+    "empirical_tensor_correction": 0,
+    "fixed_margin": 0,
+    "outside_gpu_estimate": null
+  },
+  "model_storage_bytes": 121013248,
+  "trace_summary": {
+    "measured_invocations": 3,
+    "warmup_invocations": 1,
+    "self_kv_storage_bytes": 3145728,
+    "cross_kv_storage_bytes": 12582912,
+    "self_kv_logical_bytes": 3145728,
+    "cross_kv_logical_bytes": 12582912,
+    "tensor_lifetime_count": 278721,
+    "resident_storage_bytes": 121013248,
+    "input_storage_bytes": 16400,
+    "cpu_device_only": true,
+    "method": "native_inference_lifetimes_into_xmem_allocator",
+    "cross_kv_policy": "traced_with_full_generate_no_analytic_addition"
+  },
+  "actual_input_shapes": {
+    "input_ids": [
+      2,
+      512
+    ],
+    "attention_mask": [
+      2,
+      512
+    ],
+    "decoder_input_ids": [
+      2,
+      1
+    ]
+  },
+  "inference_path": "full_generate_with_cache",
+  "dtype_policy": "native_cpu_no_rescale",
+  "environment": {
+    "torch": "2.6.0+cu124",
+    "transformers": "4.52.4",
+    "cpu_threads": 4,
+    "attention": "eager",
+    "seed": 20261006
+  },
+  "elapsed_seconds": 120.8,
+  "warnings": [
+    "CPU-traced tensors and xMem allocator simulation do not capture every GPU-specific kernel workspace",
+    "GPU process overhead is empirically calibrated for the recorded software/driver scope; it is not a universal hardware constant",
+    "Native CPU dtype is used without precision fallback; unsupported CPU operations fail explicitly"
+  ],
+  "case_id": "core__text_encdec__small__fp16__12",
+  "revision": "df1b051c49625cf57a3d0d8d3863ed4d13564fe4"
+}
