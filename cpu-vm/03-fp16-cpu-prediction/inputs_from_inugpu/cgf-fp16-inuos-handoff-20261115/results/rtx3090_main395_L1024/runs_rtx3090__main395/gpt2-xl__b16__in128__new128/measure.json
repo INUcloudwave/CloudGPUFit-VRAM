@@ -1,0 +1,554 @@
+{
+ "schema": "cgf-fp16-vram-worker/1",
+ "mode": "measure",
+ "condition": {
+  "condition_id": "gpt2-xl__b16__in128__new128",
+  "model": "openai-community/gpt2-xl",
+  "workload_type": "decoder_llm",
+  "batch_size": 16,
+  "input_len": 128,
+  "max_new_tokens": 128
+ },
+ "status": "ok",
+ "stage": "complete",
+ "worker_sha256": "d06f0f15982c811c4bc6a24028f71728e461c6ee3651bcfd520ba49b0d675883",
+ "models_json_sha256": "7b11e3e36eafd5ec73cb7686469acb21036fb60141903e34381f3eda7bad6589",
+ "conditions_json_sha256": "2634bda772c263fa52fd257605caa360f3256cb542d2ed18552ff2341d2fe258",
+ "argv": [
+  "/src/vram_worker.py",
+  "--models",
+  "/config/models.json",
+  "--conditions",
+  "/config/conditions_main395.json",
+  "--condition",
+  "gpt2-xl__b16__in128__new128",
+  "--mode",
+  "measure",
+  "--out",
+  "/out/measure.json",
+  "--attn",
+  "default"
+ ],
+ "protocol": {
+  "warmup": 3,
+  "measure": 5,
+  "allocator_cache_kept_between_iterations": true,
+  "peak_reset": "torch.cuda.reset_peak_memory_stats() right before each measure iteration (after start values)",
+  "end_values": "end_* recorded after synchronize with output tensor and GPU inputs still referenced; released_* after del output/inputs + synchronize"
+ },
+ "environment": {
+  "gpu_name": "NVIDIA GeForce RTX 3090",
+  "gpu_uuid": "17eb7299-8b39-914d-7c5b-26908502904f",
+  "cuda_total_memory": 25306529792,
+  "capability": [
+   8,
+   6
+  ],
+  "torch": "2.6.0+cu124",
+  "torch_cuda": "12.4",
+  "cudnn": 90100,
+  "transformers": "4.52.4",
+  "python": "3.11.11",
+  "kernel": "6.8.0-137-generic",
+  "cuda_module_loading_env": "LAZY",
+  "cuda_module_loading_driver": {
+   "rc": 0,
+   "mode": "LAZY"
+  },
+  "allocator_backend": "native",
+  "env": {
+   "PYTORCH_CUDA_ALLOC_CONF": null,
+   "CUBLAS_WORKSPACE_CONFIG": null,
+   "CUBLASLT_WORKSPACE_SIZE": null,
+   "PYTORCH_NO_CUDA_MEMORY_CACHING": null,
+   "CUDA_VISIBLE_DEVICES": null,
+   "OMP_NUM_THREADS": null
+  },
+  "tf32_matmul": false,
+  "tf32_cudnn": false,
+  "cudnn_benchmark": false,
+  "torch_threads": 4,
+  "cpu_count": 4,
+  "pid": 989170,
+  "image_id": "sha256:457da255e6e2de7ee05ff7814674c90abcf6d1ed04e73df3cc4eebcdb31fb032",
+  "gpu_label": "rtx3090__main395",
+  "instance_type": "",
+  "driver": "570.211.01",
+  "nvml_uuid": "GPU-17eb7299-8b39-914d-7c5b-26908502904f",
+  "nvml_total": 25769803776,
+  "other_gpu_pids": []
+ },
+ "start_state": {
+  "allocated_bytes.all.current": 0,
+  "allocated_bytes.all.peak": 0,
+  "reserved_bytes.all.current": 0,
+  "reserved_bytes.all.peak": 0,
+  "active_bytes.all.peak": 0,
+  "requested_bytes.all.peak": 0,
+  "segment.all.current": 0,
+  "allocation.all.allocated": 0,
+  "allocation.all.freed": 0,
+  "segment.all.allocated": 0,
+  "segment.all.freed": 0,
+  "num_alloc_retries": 0,
+  "num_ooms": 0,
+  "num_device_alloc": 0,
+  "num_device_free": 0
+ },
+ "after_load": {
+  "allocated_bytes.all.current": 3166764032,
+  "allocated_bytes.all.peak": 3438052864,
+  "reserved_bytes.all.current": 3655335936,
+  "reserved_bytes.all.peak": 3655335936,
+  "active_bytes.all.peak": 3438052864,
+  "requested_bytes.all.peak": 3436867200,
+  "segment.all.current": 29,
+  "allocation.all.allocated": 1257,
+  "allocation.all.freed": 581,
+  "segment.all.allocated": 29,
+  "segment.all.freed": 0,
+  "num_alloc_retries": 0,
+  "num_ooms": 0,
+  "num_device_alloc": 29,
+  "num_device_free": 0,
+  "max_allocated": 3438052864,
+  "max_reserved": 3655335936
+ },
+ "model": {
+  "id": "openai-community/gpt2-xl",
+  "revision": "15ea56dee5df4983c59b2538573817e1667135e2",
+  "loader": "AutoModelForCausalLM",
+  "use_safetensors": true,
+  "class": "GPT2LMHeadModel",
+  "attn_implementation": "sdpa",
+  "attn_requested": "default",
+  "sdpa_backends_enabled": {
+   "flash": true,
+   "mem_efficient": true,
+   "math": true,
+   "cudnn": true
+  },
+  "param_dtypes": [
+   "torch.float16"
+  ],
+  "param_bytes": 3115222400,
+  "buffer_bytes": 50331744
+ },
+ "max_position_embeddings": 1024,
+ "generation_config": {
+  "max_length": 20,
+  "max_new_tokens": 128,
+  "min_length": 0,
+  "min_new_tokens": 128,
+  "early_stopping": false,
+  "max_time": null,
+  "stop_strings": null,
+  "do_sample": false,
+  "num_beams": 1,
+  "num_beam_groups": 1,
+  "penalty_alpha": null,
+  "dola_layers": null,
+  "use_cache": true,
+  "cache_implementation": null,
+  "cache_config": null,
+  "return_legacy_cache": null,
+  "prefill_chunk_size": null,
+  "temperature": 1.0,
+  "top_k": 50,
+  "top_p": 1.0,
+  "min_p": null,
+  "typical_p": 1.0,
+  "epsilon_cutoff": 0.0,
+  "eta_cutoff": 0.0,
+  "diversity_penalty": 0.0,
+  "repetition_penalty": 1.0,
+  "encoder_repetition_penalty": 1.0,
+  "length_penalty": 1.0,
+  "no_repeat_ngram_size": 0,
+  "bad_words_ids": null,
+  "force_words_ids": null,
+  "renormalize_logits": false,
+  "constraints": null,
+  "forced_bos_token_id": null,
+  "forced_eos_token_id": null,
+  "remove_invalid_values": false,
+  "exponential_decay_length_penalty": null,
+  "suppress_tokens": null,
+  "begin_suppress_tokens": null,
+  "forced_decoder_ids": null,
+  "sequence_bias": null,
+  "token_healing": false,
+  "guidance_scale": null,
+  "low_memory": null,
+  "watermarking_config": null,
+  "num_return_sequences": 1,
+  "output_attentions": false,
+  "output_hidden_states": false,
+  "output_scores": false,
+  "output_logits": null,
+  "return_dict_in_generate": false,
+  "pad_token_id": 50256,
+  "bos_token_id": 50256,
+  "eos_token_id": 50256,
+  "encoder_no_repeat_ngram_size": 0,
+  "decoder_start_token_id": null,
+  "is_assistant": false,
+  "num_assistant_tokens": 20,
+  "num_assistant_tokens_schedule": "constant",
+  "assistant_confidence_threshold": 0.4,
+  "prompt_lookup_num_tokens": null,
+  "max_matching_ngram_size": null,
+  "assistant_early_exit": null,
+  "assistant_lookbehind": 10,
+  "target_lookbehind": 10,
+  "disable_compile": false,
+  "generation_kwargs": {},
+  "_from_model_config": true,
+  "transformers_version": "4.52.4"
+ },
+ "inputs": {
+  "input_ids": {
+   "shape": [
+    16,
+    128
+   ],
+   "dtype": "torch.int64",
+   "sha256": "4607bddf1681d82724ce8b04454a6a3b89572e648e671dedaf066367f0245a59"
+  },
+  "attention_mask": {
+   "shape": [
+    16,
+    128
+   ],
+   "dtype": "torch.int64",
+   "sha256": "3ff6c238a98ca6a7da11b2e65354523857170384301c95ae445e24514d8fc904"
+  }
+ },
+ "special_tokens_replaced_by_3": [
+  50256,
+  50256
+ ],
+ "warmup": [
+  {
+   "i": 0,
+   "elapsed_s": 4.389283588156104,
+   "new_tokens": 128,
+   "end_with_output": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448662016,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448662016,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 186029,
+    "allocation.all.freed": 185349,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  },
+  {
+   "i": 1,
+   "elapsed_s": 3.8838280979543924,
+   "new_tokens": 128,
+   "end_with_output": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448781824,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448781824,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 370800,
+    "allocation.all.freed": 370120,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  },
+  {
+   "i": 2,
+   "elapsed_s": 3.8663704860955477,
+   "new_tokens": 128,
+   "end_with_output": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448781824,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448781824,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 555571,
+    "allocation.all.freed": 554891,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  }
+ ],
+ "measures": [
+  {
+   "i": 0,
+   "ok": true,
+   "new_tokens": 128,
+   "elapsed_s": 3.929858511313796,
+   "start": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   },
+   "peak": {
+    "allocated": 4448781824,
+    "reserved": 4710203392
+   },
+   "end_with_output": {
+    "allocated": 3175349248,
+    "reserved": 4710203392
+   },
+   "stats_end": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448781824,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448781824,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 740342,
+    "allocation.all.freed": 739662,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "nvml_process_peak_bytes": 5037359104,
+   "nvml_samples": 378,
+   "nvml_samples_with_value": 378,
+   "nvml_interval_s": 0.01,
+   "nvml_errors": [],
+   "output_sha256": "2ae3e82532516015ec9c94b25e5f1880e7fa8068a70703aaa27d7004193e056d",
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  },
+  {
+   "i": 1,
+   "ok": true,
+   "new_tokens": 128,
+   "elapsed_s": 3.9342656172811985,
+   "start": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   },
+   "peak": {
+    "allocated": 4448781824,
+    "reserved": 4710203392
+   },
+   "end_with_output": {
+    "allocated": 3175349248,
+    "reserved": 4710203392
+   },
+   "stats_end": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448781824,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448781824,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 925113,
+    "allocation.all.freed": 924433,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "nvml_process_peak_bytes": 5037359104,
+   "nvml_samples": 379,
+   "nvml_samples_with_value": 379,
+   "nvml_interval_s": 0.01,
+   "nvml_errors": [],
+   "output_sha256": "2ae3e82532516015ec9c94b25e5f1880e7fa8068a70703aaa27d7004193e056d",
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  },
+  {
+   "i": 2,
+   "ok": true,
+   "new_tokens": 128,
+   "elapsed_s": 3.9162474190816283,
+   "start": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   },
+   "peak": {
+    "allocated": 4448781824,
+    "reserved": 4710203392
+   },
+   "end_with_output": {
+    "allocated": 3175349248,
+    "reserved": 4710203392
+   },
+   "stats_end": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448781824,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448781824,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 1109884,
+    "allocation.all.freed": 1109204,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "nvml_process_peak_bytes": 5037359104,
+   "nvml_samples": 376,
+   "nvml_samples_with_value": 376,
+   "nvml_interval_s": 0.01,
+   "nvml_errors": [],
+   "output_sha256": "2ae3e82532516015ec9c94b25e5f1880e7fa8068a70703aaa27d7004193e056d",
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  },
+  {
+   "i": 3,
+   "ok": true,
+   "new_tokens": 128,
+   "elapsed_s": 3.930451543070376,
+   "start": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   },
+   "peak": {
+    "allocated": 4448781824,
+    "reserved": 4710203392
+   },
+   "end_with_output": {
+    "allocated": 3175349248,
+    "reserved": 4710203392
+   },
+   "stats_end": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448781824,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448781824,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 1294655,
+    "allocation.all.freed": 1293975,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "nvml_process_peak_bytes": 5037359104,
+   "nvml_samples": 377,
+   "nvml_samples_with_value": 377,
+   "nvml_interval_s": 0.01,
+   "nvml_errors": [],
+   "output_sha256": "2ae3e82532516015ec9c94b25e5f1880e7fa8068a70703aaa27d7004193e056d",
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  },
+  {
+   "i": 4,
+   "ok": true,
+   "new_tokens": 128,
+   "elapsed_s": 3.92926646117121,
+   "start": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   },
+   "peak": {
+    "allocated": 4448781824,
+    "reserved": 4710203392
+   },
+   "end_with_output": {
+    "allocated": 3175349248,
+    "reserved": 4710203392
+   },
+   "stats_end": {
+    "allocated_bytes.all.current": 3175349248,
+    "allocated_bytes.all.peak": 4448781824,
+    "reserved_bytes.all.current": 4710203392,
+    "reserved_bytes.all.peak": 4710203392,
+    "active_bytes.all.peak": 4448781824,
+    "requested_bytes.all.peak": 4447344513,
+    "segment.all.current": 62,
+    "allocation.all.allocated": 1479426,
+    "allocation.all.freed": 1478746,
+    "segment.all.allocated": 62,
+    "segment.all.freed": 0,
+    "num_alloc_retries": 0,
+    "num_ooms": 0,
+    "num_device_alloc": 62,
+    "num_device_free": 0
+   },
+   "nvml_process_peak_bytes": 5037359104,
+   "nvml_samples": 377,
+   "nvml_samples_with_value": 377,
+   "nvml_interval_s": 0.01,
+   "nvml_errors": [],
+   "output_sha256": "2ae3e82532516015ec9c94b25e5f1880e7fa8068a70703aaa27d7004193e056d",
+   "released": {
+    "allocated": 3175283712,
+    "reserved": 4710203392
+   }
+  }
+ ],
+ "summary": {
+  "first_measure_peak_reserved": 4710203392,
+  "first_measure_peak_allocated": 4448781824,
+  "first_measure_start_reserved": 4710203392,
+  "first_measure_start_allocated": 3175283712,
+  "median_peak_reserved": 4710203392,
+  "max_peak_reserved": 4710203392,
+  "median_peak_allocated": 4448781824,
+  "max_peak_allocated": 4448781824,
+  "max_nvml_process_peak": 5037359104,
+  "median_nvml_process_peak": 5037359104
+ },
+ "timings_s": {
+  "model_load": 3.936829414218664
+ },
+ "worker_wall_s": 36.520843125879765
+}

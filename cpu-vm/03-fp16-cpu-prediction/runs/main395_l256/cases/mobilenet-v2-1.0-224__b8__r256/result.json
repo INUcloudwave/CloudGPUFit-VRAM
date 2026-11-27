@@ -1,0 +1,308 @@
+{
+ "condition_id": "mobilenet-v2-1.0-224__b8__r256",
+ "case": {
+  "index": 241,
+  "case_id": "mobilenet-v2-1.0-224__b8__r256",
+  "model": "google/mobilenet_v2_1.0_224",
+  "short": "mobilenet-v2-1.0-224",
+  "kind": "vision_cls",
+  "dtype": "fp16",
+  "batch_size": 8,
+  "input_len": null,
+  "new_tokens": null,
+  "resolution": 256,
+  "pilot": false
+ },
+ "model": "google/mobilenet_v2_1.0_224",
+ "revision": "75e607b00aeae1297cc89d026a118bce012f5c5a",
+ "status": "ok",
+ "failed_stage": null,
+ "dtype_mode": "fp32_execution_fp16_request_sizes",
+ "protocol": {
+  "reference": "INUGPU vram_worker.py sha256 d06f0f15982c811c4bc6a24028f71728e461c6ee3651bcfd520ba49b0d675883",
+  "warmup": 3,
+  "compared_measure": "first measure (measure_0)",
+  "cpu_trace": "one invocation traced, replayed warmup x3 + measure x1 (identical requests, verified)",
+  "load_phase": "synthesized GPU from_pretrained requests (cgf680.load_emu)",
+  "attn_implementation_requested": "default (argument omitted)",
+  "generation_config": "GenerationConfig.from_model_config + update (hub generation_config unused)",
+  "inputs": "host seed 20261006; per invocation device copy (clone) kept until the record, then del"
+ },
+ "timings_s": {
+  "model_load": 2.4196341037750244,
+  "trace_invocation": 0.350212637335062,
+  "trace_export": 0.2027068492025137,
+  "trace_parse": 0.009592149406671524,
+  "shadow_match": 0.004570813849568367,
+  "xmem_replay": 0.089753407984972,
+  "attn_probe": 0.06690466776490211,
+  "total_worker": 4.795697706751525
+ },
+ "files": {
+  "requests": "/exp/runs/main395/cases/mobilenet-v2-1.0-224__b8__r256/invocation_fp16_requests.npz"
+ },
+ "environment": {
+  "python": "3.11.11",
+  "torch": "2.6.0+cu124",
+  "transformers": "4.52.4",
+  "device": "cpu",
+  "threads": 5,
+  "cpu_capability": "AVX512",
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "mem_limit": "10g",
+  "cpuset": "0-4"
+ },
+ "xmem": {
+  "commit": "1ee4bd08dda277a6248abee5b6d40e0d6067efaa",
+  "files": {
+   "perf_estimator/allocator/__init__.py": true,
+   "perf_estimator/allocator/allocator.py": true,
+   "perf_estimator/allocator/simulator.py": true,
+   "perf_estimator/allocator/_C2Python/llvm.py": true,
+   "perf_estimator/profiler/__init__.py": true,
+   "perf_estimator/profiler/memoy.py": true,
+   "perf_estimator/profiler/node.py": true,
+   "perf_estimator/config.py": true
+  },
+  "imported_from": "/work/xMem/perf_estimator/allocator/allocator.py",
+  "imported_matches_root": true,
+  "ok": true
+ },
+ "load_synthesis": {
+  "warmup_bytes": 7080946,
+  "ckpt_skipped_unexpected": 0,
+  "tied_dup_loaded_then_freed": 0,
+  "keep_fp32": [],
+  "loaded_into": "<model>",
+  "post_load_casts": 0,
+  "events": 840,
+  "live_blocks": 314
+ },
+ "model_info": {
+  "class": "MobileNetV2ForImageClassification",
+  "attn_implementation": "eager",
+  "attn_implementation_fp16_load": "eager",
+  "attn_requested": "default"
+ },
+ "inputs": {
+  "pixel_values": {
+   "shape": [
+    8,
+    3,
+    256,
+    256
+   ],
+   "dtype": "torch.float16",
+   "sha256": "f6958c8a5fc5bc476da396478072188bfd7c8bb7ee688ec1b21756ab723d4b42"
+  }
+ },
+ "special_tokens_replaced_by_3": null,
+ "fp16_branch_patches": {},
+ "profiler": {
+  "api": "torch.autograd._enable_profiler (kineto, low-level)",
+  "activities": [
+   "CPU"
+  ],
+  "profile_memory": true,
+  "record_shapes": false,
+  "with_stack": false,
+  "record_scopes": "USER_SCOPE only",
+  "sessions_per_worker": 1
+ },
+ "new_tokens": null,
+ "trace_stats": {
+  "memory_events": 936,
+  "ev_idx_missing": 0,
+  "ts_inversions_in_ev_idx_order": 0,
+  "skipped_alloc_outside_regions": 0,
+  "unmatched_frees": 3,
+  "addr_reuse_while_live": 0,
+  "free_size_mismatch": 0,
+  "marker_allocs": 3,
+  "live_requests_at_session_end": 0,
+  "live_request_bytes_at_session_end": 0,
+  "requests": 465,
+  "frees": 465,
+  "marker_positions": {
+   "M0_session_start": 0,
+   "M4_measure_end_with_output": 928,
+   "M5_measure_end_output_released": 930
+  }
+ },
+ "fp16_emulation": {
+  "torch_function_calls": 310,
+  "emulated_casts": {
+   "upcast": 0,
+   "downcast": 0,
+   "upcast_bytes": 0,
+   "downcast_bytes": 0
+  },
+  "undetermined_casts": 0,
+  "match": {
+   "records": 204,
+   "matched": 204,
+   "unmatched_records": 0,
+   "buf_records": 0,
+   "requests": 465,
+   "tag_counts": {
+    "h": 204,
+    "inferred_h": 261
+   },
+   "tag_bytes": {
+    "h": 1126585216,
+    "inferred_h": 583627788
+   }
+  },
+  "early_freed_downcast_sources": 0,
+  "fp32_request_bytes": 1710213004,
+  "fp16_request_bytes": 855106502
+ },
+ "after_load": {
+  "after_load": {
+   "reserved": 27262976,
+   "allocated": 7171072,
+   "peak_allocated_during_load": 7754752,
+   "segments": 4
+  }
+ },
+ "runs": [
+  {
+   "run": "warmup_0",
+   "start": {
+    "reserved": 27262976,
+    "allocated": 7171072
+   },
+   "peak": {
+    "reserved": 178257920,
+    "allocated": 97091584
+   },
+   "end_with_output": {
+    "reserved": 178257920,
+    "allocated": 10333184
+   },
+   "released": {
+    "reserved": 178257920,
+    "allocated": 7171072
+   },
+   "segments_end": 12
+  },
+  {
+   "run": "warmup_1",
+   "start": {
+    "reserved": 178257920,
+    "allocated": 7171072
+   },
+   "peak": {
+    "reserved": 178257920,
+    "allocated": 97091584
+   },
+   "end_with_output": {
+    "reserved": 178257920,
+    "allocated": 10333184
+   },
+   "released": {
+    "reserved": 178257920,
+    "allocated": 7171072
+   },
+   "segments_end": 12
+  },
+  {
+   "run": "warmup_2",
+   "start": {
+    "reserved": 178257920,
+    "allocated": 7171072
+   },
+   "peak": {
+    "reserved": 178257920,
+    "allocated": 97091584
+   },
+   "end_with_output": {
+    "reserved": 178257920,
+    "allocated": 10333184
+   },
+   "released": {
+    "reserved": 178257920,
+    "allocated": 7171072
+   },
+   "segments_end": 12
+  },
+  {
+   "run": "measure_0",
+   "start": {
+    "reserved": 178257920,
+    "allocated": 7171072
+   },
+   "peak": {
+    "reserved": 178257920,
+    "allocated": 97091584
+   },
+   "end_with_output": {
+    "reserved": 178257920,
+    "allocated": 10333184
+   },
+   "released": {
+    "reserved": 178257920,
+    "allocated": 7171072
+   },
+   "segments_end": 12
+  }
+ ],
+ "replay": {
+  "oom": null,
+  "unknown_frees": 0,
+  "live_blocks_at_end": 314
+ },
+ "summary": {
+  "first_measure_start_reserved": 178257920,
+  "first_measure_start_allocated": 7171072,
+  "first_measure_peak_reserved": 178257920,
+  "first_measure_peak_allocated": 97091584,
+  "first_measure_end_with_output_reserved": 178257920,
+  "first_measure_end_with_output_allocated": 10333184,
+  "first_measure_released_reserved": 178257920,
+  "first_measure_released_allocated": 7171072,
+  "after_load_reserved": 27262976,
+  "after_load_allocated": 7171072,
+  "load_peak_allocated": 7754752
+ },
+ "variant_with_cublas_workspace": {
+  "note": "NOT the CPU prediction: same replay + one 8.125 MiB GPU-only cuBLAS workspace request at warmup_0 start",
+  "first_measure_start_reserved": 178257920,
+  "first_measure_start_allocated": 15690752,
+  "first_measure_peak_reserved": 178257920,
+  "first_measure_peak_allocated": 105611264
+ },
+ "finite_check": "not_assessable (FP32 execution); use GPU validate result",
+ "attention_ops_cpu": {},
+ "rss": {
+  "max_rss_bytes": 831844352,
+  "stage_peak_rss_bytes": {
+   "init": 447574016,
+   "model_load": 607801344,
+   "trace_invocation": 780341248
+  }
+ },
+ "runner": {
+  "phase": "A",
+  "attempt": 1,
+  "cpuset": "0-4",
+  "threads": 5,
+  "mem_limit": "10g",
+  "timeout_s": 7200.0,
+  "exit_code": 0,
+  "oom_killed": false,
+  "timed_out": false,
+  "wall_seconds": 7.824815273284912,
+  "container_memory_peak_bytes": 583278592,
+  "container_memory_max_current_bytes": 468783104,
+  "host_mem_before": {
+   "MemTotal": 50510213120,
+   "MemAvailable": 46122217472
+  },
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "started": 1794455376.5644233,
+  "container": "cgf395-241-A-1794455376"
+ }
+}

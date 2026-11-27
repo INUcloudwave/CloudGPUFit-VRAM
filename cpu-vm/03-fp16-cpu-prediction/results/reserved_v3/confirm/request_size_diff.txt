@@ -1,0 +1,6 @@
+# request_size_diff.py output (warmup_0 alloc request sizes, GPU trace vs CPU FP16-emulated stream), 2026-11-16
+t5-base__b128__in128__new512: 48 MiB gpu 124 / cpu 148 ; 24 MiB gpu 12579 / cpu 12555  (CPU sizes one 24 MiB tensor per layer as 48 MiB)
+  0.375 MiB gpu 69707 / cpu 88139 ; 0.188 MiB gpu 149556 / cpu 131122 ; 8 B gpu 7707 / cpu 76401 ; ws 8519680 gpu 1 / cpu 0
+gpt2__b128__in128__new512: 1 MiB gpu 24576 / cpu 0 (cuBLASLt transient) ; 512 B gpu 25550 / cpu 0 vs 256 B cpu 25550 ; 6144 gpu 6132 vs 3072 cpu 6132
+  50257 gpu 3072 / cpu 1024 ; 248320 (CPU thread scratch) cpu 12
+tinyllama-1.1b-chat__b128__in128__new512: 2 MiB gpu 25 / cpu 3 ; 16384 gpu 12777 / cpu 1535 vs 8192 cpu 11242 ; 248320/23xxx CPU-only scratch

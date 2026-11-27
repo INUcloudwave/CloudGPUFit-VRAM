@@ -1,0 +1,114 @@
+{
+ "common": {
+  "dtype": "fp16",
+  "seed": 20261006,
+  "attn_implementation": "eager",
+  "load_kwargs": {
+   "torch_dtype": "fp16",
+   "low_cpu_mem_usage": true,
+   "device_map": {
+    "": "cuda:0"
+   },
+   "local_files_only": true,
+   "attn_implementation": "eager"
+  },
+  "after_load": ".to(device='cuda', dtype=float16).eval(); config.output_attentions=False; config.output_hidden_states=False",
+  "text_input_rule": "g=torch.Generator().manual_seed(seed); input_ids=torch.randint(3, config.vocab_size, (B, L), generator=g, dtype=int64); ids equal to config pad/eos/bos/decoder_start (int or list) -> 3; attention_mask=torch.ones(B, L, dtype=int64). No tokenizer, no BOS insertion, no truncation.",
+  "image_input_rule": "g=torch.Generator().manual_seed(seed); pixel_values=torch.randn(B, 3, R, R, generator=g, dtype=float32).to(float16). No image processor (no resize/crop).",
+  "generation_rule": "GenerationConfig.from_model_config(model.config) then do_sample=False, num_beams=1, use_cache=True, min_new_tokens=max_new_tokens=N, pad_token_id=config.pad_token_id or eos, no repetition penalty/sampling knobs from hub generation_config.json. decoder: output.shape[1]-L == N; T5: decoder starts from decoder_start_token_id only, output.shape[1]-1 == N (start token excluded)",
+  "inputs_device_rule": "inputs kept on host CPU, moved with .to('cuda') inside every invocation"
+ },
+ "models": {
+  "facebook/opt-125m": {
+   "short": "opt-125m",
+   "workload_type": "decoder_llm",
+   "revision": "27dcfa74d334bc871f3234de431e71c6eeba5dd6",
+   "use_safetensors": false,
+   "loader": "AutoModelForCausalLM"
+  },
+  "TinyLlama/TinyLlama-1.1B-Chat-v1.0": {
+   "short": "tinyllama-1.1b-chat",
+   "workload_type": "decoder_llm",
+   "revision": "fe8a4ea1ffedaf415f4da2f062534de366a451e6",
+   "use_safetensors": true,
+   "loader": "AutoModelForCausalLM"
+  },
+  "Qwen/Qwen2.5-1.5B-Instruct": {
+   "short": "qwen2.5-1.5b-instruct",
+   "workload_type": "decoder_llm",
+   "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+   "use_safetensors": true,
+   "loader": "AutoModelForCausalLM"
+  },
+  "openai-community/gpt2": {
+   "short": "gpt2",
+   "workload_type": "decoder_llm",
+   "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
+   "use_safetensors": true,
+   "loader": "AutoModelForCausalLM"
+  },
+  "openai-community/gpt2-medium": {
+   "short": "gpt2-medium",
+   "workload_type": "decoder_llm",
+   "revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+   "use_safetensors": true,
+   "loader": "AutoModelForCausalLM"
+  },
+  "openai-community/gpt2-xl": {
+   "short": "gpt2-xl",
+   "workload_type": "decoder_llm",
+   "revision": "15ea56dee5df4983c59b2538573817e1667135e2",
+   "use_safetensors": true,
+   "loader": "AutoModelForCausalLM"
+  },
+  "microsoft/resnet-18": {
+   "short": "resnet-18",
+   "workload_type": "vision_cls",
+   "revision": "65a5785d9156231087c481e0c7dd33a5ff6f7e3e",
+   "use_safetensors": true,
+   "loader": "AutoModelForImageClassification"
+  },
+  "microsoft/resnet-50": {
+   "short": "resnet-50",
+   "workload_type": "vision_cls",
+   "revision": "34c2154c194f829b11125337b98c8f5f9965ff19",
+   "use_safetensors": true,
+   "loader": "AutoModelForImageClassification"
+  },
+  "google/mobilenet_v2_1.0_224": {
+   "short": "mobilenet-v2-1.0-224",
+   "workload_type": "vision_cls",
+   "revision": "75e607b00aeae1297cc89d026a118bce012f5c5a",
+   "use_safetensors": true,
+   "loader": "AutoModelForImageClassification"
+  },
+  "google/vit-large-patch16-224": {
+   "short": "vit-large-patch16-224",
+   "workload_type": "vision_cls",
+   "revision": "9e2727f4250d3973839eecfa5c4b42e41b709a50",
+   "use_safetensors": false,
+   "loader": "AutoModelForImageClassification"
+  },
+  "google-t5/t5-small": {
+   "short": "t5-small",
+   "workload_type": "text_encdec",
+   "revision": "df1b051c49625cf57a3d0d8d3863ed4d13564fe4",
+   "use_safetensors": true,
+   "loader": "AutoModelForSeq2SeqLM"
+  },
+  "google-t5/t5-base": {
+   "short": "t5-base",
+   "workload_type": "text_encdec",
+   "revision": "a9723ea7f1b39c1eae772870f3b547bf6ef7e6c1",
+   "use_safetensors": true,
+   "loader": "AutoModelForSeq2SeqLM"
+  },
+  "google-t5/t5-3b": {
+   "short": "t5-3b",
+   "workload_type": "text_encdec",
+   "revision": "bed96aab9ee46012a5046386105ee5fd0ac572f0",
+   "use_safetensors": true,
+   "loader": "AutoModelForSeq2SeqLM"
+  }
+ }
+}

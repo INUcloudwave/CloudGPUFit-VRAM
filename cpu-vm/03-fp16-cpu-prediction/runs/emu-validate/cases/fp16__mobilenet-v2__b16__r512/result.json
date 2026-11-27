@@ -1,0 +1,396 @@
+{
+ "case_id": "fp16__mobilenet-v2__b16__r512",
+ "case": {
+  "batch_size": 16,
+  "case_id": "fp16__mobilenet-v2__b16__r512",
+  "dtype": "fp16",
+  "index": 426,
+  "input_len": null,
+  "kind": "vision_cls",
+  "model": "google/mobilenet_v2_1.0_224",
+  "new_tokens": null,
+  "pilot": true,
+  "resolution": 512,
+  "short": "mobilenet-v2"
+ },
+ "model": "google/mobilenet_v2_1.0_224",
+ "revision": "75e607b00aeae1297cc89d026a118bce012f5c5a",
+ "weights_file": "model.safetensors",
+ "status": "ok",
+ "protocol": {
+  "warmup_invocations": 3,
+  "measure_invocations": 1,
+  "seed": 20261006,
+  "profiler_sessions": 1,
+  "comparison_target": "GPU first measured invocation",
+  "inputs": "host-generated, moved to device once before warmup, same tensors every invocation",
+  "output_release": "del output after each invocation (outside regions, inside session)",
+  "validation_forward_before_measure": false,
+  "inference_mode": true,
+  "eval": true
+ },
+ "timings_s": {
+  "model_load": 1.8997447462752461,
+  "input_prep": 0.34926009085029364,
+  "trace_session_total": 11.08877358213067,
+  "warmup_runs_incl_profiler": 8.327238401398063,
+  "measure_run_incl_profiler": 2.7388016441836953,
+  "trace_export": 0.19644349347800016,
+  "trace_parse": 0.03381229750812054,
+  "shadow_match": 0.09287094604223967,
+  "xmem_replay": 0.08384562563151121,
+  "total_worker": 15.175956446677446
+ },
+ "trace_files": {
+  "raw_trace_bytes": 1132118,
+  "events": "/exp/runs/emu-validate/cases/fp16__mobilenet-v2__b16__r512/events.npz",
+  "raw_trace_deleted": true
+ },
+ "environment": {
+  "python": "3.11.11",
+  "torch": "2.6.0+cu124",
+  "transformers": "4.52.4",
+  "numpy": "2.2.2",
+  "device": "cpu",
+  "torch_threads": 8,
+  "cpu_capability": "AVX512",
+  "mkldnn_fp16_supported": false,
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "container_memory_limit": "30g",
+  "cpus_limit": "8",
+  "env": {
+   "OMP_NUM_THREADS": "8",
+   "MKL_NUM_THREADS": "8",
+   "PYTORCH_CUDA_ALLOC_CONF": null,
+   "CUDA_MODULE_LOADING": null,
+   "HF_HUB_OFFLINE": "1"
+  }
+ },
+ "xmem": {
+  "commit": "1ee4bd08dda277a6248abee5b6d40e0d6067efaa",
+  "files": {
+   "perf_estimator/allocator/__init__.py": true,
+   "perf_estimator/allocator/allocator.py": true,
+   "perf_estimator/allocator/simulator.py": true,
+   "perf_estimator/allocator/_C2Python/llvm.py": true,
+   "perf_estimator/profiler/__init__.py": true,
+   "perf_estimator/profiler/memoy.py": true,
+   "perf_estimator/profiler/node.py": true,
+   "perf_estimator/config.py": true
+  },
+  "imported_from": "/work/xMem/perf_estimator/allocator/allocator.py",
+  "imported_matches_root": true,
+  "ok": true,
+  "allocator_settings": {
+   "policy": "xmem_pinned (upstream CachingAllocator, no edits)",
+   "capacity_bytes": 1099511627776,
+   "replay_order": "Ev Idx, sequential"
+  }
+ },
+ "dtype_mode": "fp32_trace_emulating_fp16",
+ "attention_implementation": "eager",
+ "inputs": {
+  "pixel_values": {
+   "shape": [
+    16,
+    3,
+    512,
+    512
+   ],
+   "dtype": "float16",
+   "sha256": "b39ba80cbdcebaa5f33a1dbd023b411359963adee05f28d42d984fad1399a185"
+  }
+ },
+ "inputs_used_for_fp32_trace": {
+  "pixel_values": {
+   "shape": [
+    16,
+    3,
+    512,
+    512
+   ],
+   "dtype": "float32",
+   "sha256": "18d660aaaf4665983bdbaa0ab980616f57f451d27953c87c17479a9b5a8aa494"
+  }
+ },
+ "generation_config": null,
+ "resident": {
+  "parameter_buffer_storages": 314,
+  "parameter_buffer_bytes": 7080946,
+  "input_storages": 1,
+  "input_bytes": 25165824,
+  "dedup_rule": "unique (storage data_ptr, nbytes); tied weights counted once",
+  "placement": "params+buffers (module order) then inputs, malloc'd before first request, never freed",
+  "difference_vs_gpu_start": "GPU start state comes from from_pretrained->cuda loading (its temporaries/caching may leave extra cached segments) and input .to(cuda); here each storage is a fresh malloc in an empty allocator, so segment layout/fragmentation can differ"
+ },
+ "fp16_branch_patches": {},
+ "profiler": {
+  "api": "torch.autograd._enable_profiler (kineto, low-level)",
+  "activities": [
+   "CPU"
+  ],
+  "profile_memory": true,
+  "record_shapes": false,
+  "with_stack": false,
+  "record_scopes": "USER_SCOPE only",
+  "sessions_per_worker": 1
+ },
+ "runs": [
+  {
+   "run": "warmup0",
+   "seconds_incl_profiler": 2.8787118773907423,
+   "actual_new_tokens_per_sample": 0,
+   "output_shape": [
+    16,
+    1001
+   ],
+   "forwards": 1
+  },
+  {
+   "run": "warmup1",
+   "seconds_incl_profiler": 2.7091962033882737,
+   "actual_new_tokens_per_sample": 0,
+   "output_shape": [
+    16,
+    1001
+   ],
+   "forwards": 1
+  },
+  {
+   "run": "warmup2",
+   "seconds_incl_profiler": 2.7393303206190467,
+   "actual_new_tokens_per_sample": 0,
+   "output_shape": [
+    16,
+    1001
+   ],
+   "forwards": 1
+  },
+  {
+   "run": "measure0",
+   "seconds_incl_profiler": 2.7388016441836953,
+   "actual_new_tokens_per_sample": 0,
+   "output_shape": [
+    16,
+    1001
+   ],
+   "forwards": 1
+  }
+ ],
+ "finite_check": {
+  "method": "forward hook, numpy view of logits (last position for text), every forward",
+  "first_nonfinite": null
+ },
+ "trace_stats": {
+  "memory_events": 3724,
+  "ev_idx_missing": 0,
+  "ts_inversions_in_ev_idx_order": 0,
+  "skipped_alloc_outside_regions": 0,
+  "unmatched_frees": 6,
+  "addr_reuse_while_live": 0,
+  "free_size_mismatch": 0,
+  "marker_allocs": 6,
+  "live_requests_at_session_end": 0,
+  "live_request_bytes_at_session_end": 0,
+  "requests": 1856,
+  "frees": 1856,
+  "marker_positions": {
+   "M0_session_start": 0,
+   "M1_after_warmup0": 928,
+   "M2_after_warmup1": 1856,
+   "M3_measure_start": 2784,
+   "M4_measure_end_with_output": 3711,
+   "M5_measure_end_output_released": 3712
+  },
+  "regions": [
+   {
+    "name": "cgf680::00::warmup::0",
+    "ts_begin": 3524242498637.713,
+    "ts_end": 3524245377112.004
+   },
+   {
+    "name": "cgf680::01::warmup::1",
+    "ts_begin": 3524245377754.479,
+    "ts_end": 3524248086852.494
+   },
+   {
+    "name": "cgf680::02::warmup::2",
+    "ts_begin": 3524248087531.25,
+    "ts_end": 3524250826769.252
+   },
+   {
+    "name": "cgf680::03::measure::0",
+    "ts_begin": 3524250827437.644,
+    "ts_end": 3524253566141.211
+   }
+  ],
+  "per_region_requests": {
+   "cgf680::00::warmup::0": 464,
+   "cgf680::01::warmup::1": 464,
+   "cgf680::02::warmup::2": 464,
+   "cgf680::03::measure::0": 464
+  },
+  "per_region_request_bytes": {
+   "cgf680::00::warmup::0": 13445828876,
+   "cgf680::01::warmup::1": 13445828876,
+   "cgf680::02::warmup::2": 13445828876,
+   "cgf680::03::measure::0": 13445828876
+  }
+ },
+ "prediction_fp32_raw": {
+  "allocated_start_bytes": 64573952,
+  "allocated_peak_bytes": 1448697856,
+  "allocated_end_bytes": 64638464,
+  "allocated_end_after_output_release_bytes": 64573952,
+  "reserved_start_bytes": 2296381440,
+  "reserved_peak_bytes": 2296381440,
+  "reserved_end_bytes": 2296381440,
+  "reserved_end_after_output_release_bytes": 2296381440,
+  "end_definition": "end = M4: measure invocation returned, output tensor still referenced; *_after_output_release = M5 after `del output`"
+ },
+ "fp16_emulation": {
+  "method": "FP32 trace; per-request FP16 size from shadow dtype (h: model dtype -> /2, f: fixed fp32, x: non-float); no-op casts reproduced as real buffers",
+  "torch_function_calls": 1240,
+  "emulated_casts": {
+   "upcast": 0,
+   "downcast": 0,
+   "upcast_bytes": 0,
+   "downcast_bytes": 0
+  },
+  "undetermined_casts": 0,
+  "match": {
+   "records": 812,
+   "matched": 812,
+   "unmatched_records": 0,
+   "buf_records": 0,
+   "requests": 1856,
+   "tag_counts": {
+    "h": 812,
+    "inferred_h": 1044
+   },
+   "tag_bytes": {
+    "h": 35601816576,
+    "inferred_h": 18181498928
+   }
+  },
+  "early_freed_downcast_sources": 0
+ },
+ "replay": {
+  "snapshots": {
+   "after_resident": {
+    "reserved": 52428800,
+    "allocated": 32336896
+   },
+   "M0_session_start": {
+    "reserved": 52428800,
+    "allocated": 32336896
+   },
+   "M1_after_warmup0": {
+    "reserved": 1161822208,
+    "allocated": 32336896
+   },
+   "M2_after_warmup1": {
+    "reserved": 1161822208,
+    "allocated": 32336896
+   },
+   "M3_measure_start": {
+    "reserved": 1161822208,
+    "allocated": 32336896
+   },
+   "M4_measure_end_with_output": {
+    "reserved": 1161822208,
+    "allocated": 32369152
+   },
+   "M5_measure_end_output_released": {
+    "reserved": 1161822208,
+    "allocated": 32336896
+   }
+  },
+  "segments_peaks": {
+   "before_M0": {
+    "reserved": 52428800,
+    "allocated": 32336896
+   },
+   "after_M0_session_start": {
+    "reserved": 1161822208,
+    "allocated": 724399104
+   },
+   "after_M1_after_warmup0": {
+    "reserved": 1161822208,
+    "allocated": 724399104
+   },
+   "after_M2_after_warmup1": {
+    "reserved": 1161822208,
+    "allocated": 724399104
+   },
+   "after_M3_measure_start": {
+    "reserved": 1161822208,
+    "allocated": 724399104
+   },
+   "after_M4_measure_end_with_output": {
+    "reserved": 1161822208,
+    "allocated": 32369152
+   },
+   "after_M5_measure_end_output_released": {
+    "reserved": 1161822208,
+    "allocated": 32336896
+   }
+  },
+  "session_peak_reserved_bytes": 1161822208,
+  "session_peak_allocated_bytes": 724399104,
+  "unknown_frees": 0,
+  "live_blocks_at_end": 315,
+  "segments_at_end": 14,
+  "oom": null
+ },
+ "prediction": {
+  "allocated_start_bytes": 32336896,
+  "allocated_peak_bytes": 724399104,
+  "allocated_end_bytes": 32369152,
+  "allocated_end_after_output_release_bytes": 32336896,
+  "reserved_start_bytes": 1161822208,
+  "reserved_peak_bytes": 1161822208,
+  "reserved_end_bytes": 1161822208,
+  "reserved_end_after_output_release_bytes": 1161822208,
+  "end_definition": "end = M4: measure invocation returned, output tensor still referenced; *_after_output_release = M5 after `del output`"
+ },
+ "rss": {
+  "max_rss_bytes": 2259660800,
+  "stage_peak_rss_bytes": {
+   "init": 451874816,
+   "model_load": 617197568,
+   "trace_run": 1793028096,
+   "xmem_replay": 821768192
+  }
+ },
+ "runner": {
+  "case_id": "fp16__mobilenet-v2__b16__r512",
+  "container": "cgf680-426-1794381262",
+  "exit_code": 0,
+  "oom_killed": false,
+  "timed_out": false,
+  "timeout_hours": null,
+  "wall_seconds": 18.18659520149231,
+  "container_memory_peak_bytes": 2002030592,
+  "container_memory_max_current_bytes": 1493209088,
+  "host_mem_before": {
+   "MemTotal": 50510213120,
+   "MemFree": 10907590656,
+   "MemAvailable": 40989487104
+  },
+  "host_mem_after": {
+   "MemTotal": 50510213120,
+   "MemFree": 11025440768,
+   "MemAvailable": 41107472384
+  },
+  "mem_limit": "30g",
+  "threads": 8,
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "conv1d_colmajor": false,
+  "profiler_scope": "user",
+  "emulate_fp16_from_fp32": true,
+  "started": 1794381262.847048
+ }
+}

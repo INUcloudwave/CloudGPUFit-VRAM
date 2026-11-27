@@ -1,0 +1,8 @@
+# Fallback ONLY if the local image cloudgpufit-cpu-validation:20261108 (sha256:875290b5854a...) is lost.
+# Rebuilds an EQUIVALENT environment (same base digest + same pip package versions); the image ID will differ,
+# so record the new ID in every result (cpu_worker2 writes CGF_IMAGE_ID into result.json).
+FROM pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
+COPY pip_added_over_base.txt /tmp/req.txt
+RUN pip install --no-cache-dir --no-deps -r /tmp/req.txt && rm /tmp/req.txt
+WORKDIR /workspace
+CMD ["sleep", "infinity"]

@@ -1,0 +1,310 @@
+{
+ "condition_id": "resnet-18__b8__r224",
+ "case": {
+  "index": 200,
+  "case_id": "resnet-18__b8__r224",
+  "model": "microsoft/resnet-18",
+  "short": "resnet-18",
+  "kind": "vision_cls",
+  "dtype": "fp16",
+  "batch_size": 8,
+  "input_len": null,
+  "new_tokens": null,
+  "resolution": 224,
+  "pilot": true
+ },
+ "model": "microsoft/resnet-18",
+ "revision": "65a5785d9156231087c481e0c7dd33a5ff6f7e3e",
+ "status": "ok",
+ "failed_stage": null,
+ "dtype_mode": "fp32_execution_fp16_request_sizes",
+ "protocol": {
+  "reference": "INUGPU vram_worker.py sha256 d06f0f15982c811c4bc6a24028f71728e461c6ee3651bcfd520ba49b0d675883",
+  "warmup": 3,
+  "compared_measure": "first measure (measure_0)",
+  "cpu_trace": "one invocation traced, replayed warmup x3 + measure x1 (identical requests, verified)",
+  "load_phase": "synthesized GPU from_pretrained requests (cgf680.load_emu)",
+  "attn_implementation_requested": "default (argument omitted)",
+  "generation_config": "GenerationConfig.from_model_config + update (hub generation_config unused)",
+  "inputs": "host seed 20261006; per invocation device copy (clone) kept until the record, then del"
+ },
+ "timings_s": {
+  "model_load": 2.795012539252639,
+  "trace_invocation": 0.45304219238460064,
+  "trace_export": 0.13386024720966816,
+  "trace_parse": 0.004996437579393387,
+  "shadow_match": 0.0020540039986371994,
+  "xmem_replay": 0.029986709356307983,
+  "attn_probe": 0.029961517080664635,
+  "total_worker": 4.877915870398283
+ },
+ "files": {
+  "requests": "/exp/runs/thread_check/t20/cases/resnet-18__b8__r224/invocation_fp16_requests.npz"
+ },
+ "environment": {
+  "python": "3.11.11",
+  "torch": "2.6.0+cu124",
+  "transformers": "4.52.4",
+  "device": "cpu",
+  "threads": 20,
+  "cpu_capability": "AVX512",
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "mem_limit": "42g",
+  "cpuset": "0-19"
+ },
+ "xmem": {
+  "commit": "1ee4bd08dda277a6248abee5b6d40e0d6067efaa",
+  "files": {
+   "perf_estimator/allocator/__init__.py": true,
+   "perf_estimator/allocator/allocator.py": true,
+   "perf_estimator/allocator/simulator.py": true,
+   "perf_estimator/allocator/_C2Python/llvm.py": true,
+   "perf_estimator/profiler/__init__.py": true,
+   "perf_estimator/profiler/memoy.py": true,
+   "perf_estimator/profiler/node.py": true,
+   "perf_estimator/config.py": true
+  },
+  "imported_from": "/work/xMem/perf_estimator/allocator/allocator.py",
+  "imported_matches_root": true,
+  "ok": true
+ },
+ "load_synthesis": {
+  "warmup_bytes": 23398384,
+  "ckpt_skipped_unexpected": 0,
+  "tied_dup_loaded_then_freed": 0,
+  "keep_fp32": [],
+  "loaded_into": "<model>",
+  "post_load_casts": 0,
+  "events": 328,
+  "live_blocks": 122
+ },
+ "model_info": {
+  "class": "ResNetForImageClassification",
+  "attn_implementation": "eager",
+  "attn_implementation_fp16_load": "eager",
+  "attn_requested": "default"
+ },
+ "inputs": {
+  "pixel_values": {
+   "shape": [
+    8,
+    3,
+    224,
+    224
+   ],
+   "dtype": "torch.float16",
+   "sha256": "0925f3c25f1e9628961fab765b6fbb0ca46f0e530c573774c6d012cdb6e85812"
+  }
+ },
+ "special_tokens_replaced_by_3": null,
+ "fp16_branch_patches": {},
+ "profiler": {
+  "api": "torch.autograd._enable_profiler (kineto, low-level)",
+  "activities": [
+   "CPU"
+  ],
+  "profile_memory": true,
+  "record_shapes": false,
+  "with_stack": false,
+  "record_scopes": "USER_SCOPE only",
+  "sessions_per_worker": 1
+ },
+ "new_tokens": null,
+ "trace_stats": {
+  "memory_events": 338,
+  "ev_idx_missing": 0,
+  "ts_inversions_in_ev_idx_order": 0,
+  "skipped_alloc_outside_regions": 0,
+  "unmatched_frees": 3,
+  "addr_reuse_while_live": 0,
+  "free_size_mismatch": 0,
+  "marker_allocs": 3,
+  "live_requests_at_session_end": 0,
+  "live_request_bytes_at_session_end": 0,
+  "requests": 166,
+  "frees": 166,
+  "marker_positions": {
+   "M0_session_start": 0,
+   "M4_measure_end_with_output": 330,
+   "M5_measure_end_output_released": 332
+  }
+ },
+ "fp16_emulation": {
+  "torch_function_calls": 71,
+  "emulated_casts": {
+   "upcast": 0,
+   "downcast": 0,
+   "upcast_bytes": 0,
+   "downcast_bytes": 0
+  },
+  "undetermined_casts": 0,
+  "match": {
+   "records": 61,
+   "matched": 61,
+   "unmatched_records": 0,
+   "buf_records": 0,
+   "requests": 166,
+   "tag_counts": {
+    "h": 61,
+    "inferred_h": 105
+   },
+   "tag_bytes": {
+    "h": 244104448,
+    "inferred_h": 209083020
+   }
+  },
+  "early_freed_downcast_sources": 0,
+  "fp32_request_bytes": 453187468,
+  "fp16_request_bytes": 226593734
+ },
+ "after_load": {
+  "after_load": {
+   "reserved": 50331648,
+   "allocated": 23814656,
+   "peak_allocated_during_load": 33247232,
+   "segments": 4
+  }
+ },
+ "runs": [
+  {
+   "run": "warmup_0",
+   "start": {
+    "reserved": 50331648,
+    "allocated": 23814656
+   },
+   "peak": {
+    "reserved": 69206016,
+    "allocated": 51914240
+   },
+   "end_with_output": {
+    "reserved": 69206016,
+    "allocated": 26239488
+   },
+   "released": {
+    "reserved": 69206016,
+    "allocated": 23814656
+   },
+   "segments_end": 7
+  },
+  {
+   "run": "warmup_1",
+   "start": {
+    "reserved": 69206016,
+    "allocated": 23814656
+   },
+   "peak": {
+    "reserved": 69206016,
+    "allocated": 51914240
+   },
+   "end_with_output": {
+    "reserved": 69206016,
+    "allocated": 26239488
+   },
+   "released": {
+    "reserved": 69206016,
+    "allocated": 23814656
+   },
+   "segments_end": 7
+  },
+  {
+   "run": "warmup_2",
+   "start": {
+    "reserved": 69206016,
+    "allocated": 23814656
+   },
+   "peak": {
+    "reserved": 69206016,
+    "allocated": 51914240
+   },
+   "end_with_output": {
+    "reserved": 69206016,
+    "allocated": 26239488
+   },
+   "released": {
+    "reserved": 69206016,
+    "allocated": 23814656
+   },
+   "segments_end": 7
+  },
+  {
+   "run": "measure_0",
+   "start": {
+    "reserved": 69206016,
+    "allocated": 23814656
+   },
+   "peak": {
+    "reserved": 69206016,
+    "allocated": 51914240
+   },
+   "end_with_output": {
+    "reserved": 69206016,
+    "allocated": 26239488
+   },
+   "released": {
+    "reserved": 69206016,
+    "allocated": 23814656
+   },
+   "segments_end": 7
+  }
+ ],
+ "replay": {
+  "oom": null,
+  "unknown_frees": 0,
+  "live_blocks_at_end": 122
+ },
+ "summary": {
+  "first_measure_start_reserved": 69206016,
+  "first_measure_start_allocated": 23814656,
+  "first_measure_peak_reserved": 69206016,
+  "first_measure_peak_allocated": 51914240,
+  "first_measure_end_with_output_reserved": 69206016,
+  "first_measure_end_with_output_allocated": 26239488,
+  "first_measure_released_reserved": 69206016,
+  "first_measure_released_allocated": 23814656,
+  "after_load_reserved": 50331648,
+  "after_load_allocated": 23814656,
+  "load_peak_allocated": 33247232
+ },
+ "variant_with_cublas_workspace": {
+  "note": "NOT the CPU prediction: same replay + one 8.125 MiB GPU-only cuBLAS workspace request at warmup_0 start",
+  "first_measure_start_reserved": 83886080,
+  "first_measure_start_allocated": 33251840,
+  "first_measure_peak_reserved": 83886080,
+  "first_measure_peak_allocated": 61351424
+ },
+ "finite_check": "not_assessable (FP32 execution); use GPU validate result",
+ "attention_ops_cpu": {},
+ "rss": {
+  "max_rss_bytes": 780906496,
+  "stage_peak_rss_bytes": {
+   "init": 450658304,
+   "model_load": 639512576
+  }
+ },
+ "runner": {
+  "scheduler": "run_l256",
+  "phase": "P",
+  "slot": 0,
+  "cpuset": "0-19",
+  "threads": 20,
+  "mem_limit": "42g",
+  "timeout_s": 28800.0,
+  "exit_code": 0,
+  "oom_killed": false,
+  "timed_out": false,
+  "preempted": null,
+  "wall_seconds": 7.678418874740601,
+  "container_memory_peak_bytes": 552931328,
+  "container_memory_max_current_bytes": 551297024,
+  "host_mem_before": {
+   "MemTotal": 50510213120,
+   "MemAvailable": 47223582720
+  },
+  "image": "cloudgpufit-cpu-validation:20261108",
+  "image_id": "sha256:875290b5854ad6dbc8ea554fecb292dd5ffdfea2a03e8c4e8179a3c827968fa5",
+  "started": 1794733467.70738,
+  "container": "cgfl256-200-P-1794733467",
+  "cases_manifest": "manifest/cases395_l256.jsonl"
+ }
+}

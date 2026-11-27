@@ -1,0 +1,21 @@
+# INUGPU 진단: deviceless 조회 실패 (2026-11-23, RTX 3090)
+
+- 공식 실행: `bash run_version_test.sh` → probe 6개 버전 모두 완료, deviceless 조회 단계에서 중단
+  - `PROPS_SAVED ... 648` 이후 `Invalid handle. Cannot load symbol cublasLtGetVersion` → python segfault (종료 코드 139)
+  - `deviceless_rtx3090_cudnn9.28.0.42_gpuhost.jsonl` 0 바이트, `VERSION_TEST_DONE`/`RESULTS_SHA256SUMS` 없음
+  - 스크립트가 중간에 멈춰서 `site_9.28.0.42/`, `wheels/`(frontend wheel)가 남아 있음 (지우지 않음)
+- 원인: deviceless 실행의 LD_LIBRARY_PATH가 cuDNN lib만 가리킴. probe 때는 torch가 cuBLAS/cudart를 먼저 로드해서 문제가 없었음
+  - cuDNN 9.28이 libcublasLt.so.12 → 없음 → segfault
+  - cuBLAS만 추가하면 모든 형태 `check_support: Unable to load any libcudart library`
+- 진단 실행 (스크립트·공식 출력 파일 수정 없음, 모두 이 폴더 안)
+  - A: 원래 환경 `--limit 1` → 같은 segfault 재현 (`A_orig_limit1.jsonl` 0 바이트)
+  - B: + `/opt/conda/lib/python3.11/site-packages/nvidia/cublas/lib` → 4206/4206 libcudart 오류 (`deviceless_rtx3090_cudnn9.28.0.42_gpuhost_DIAG_cublaspath.jsonl`)
+  - DIAG2: + cublas/lib + cuda_runtime/lib → 4206/4206 오류 없음, 281 s (`deviceless_DIAG2_cublas_cudart.jsonl`)
+- 제안 수정 (INUOS 승인 후 반영): run_version_test.sh의 `DL=(...)` LD_LIBRARY_PATH에 두 경로 추가
+  - `/probe/site_9.28.0.42/nvidia/cudnn/lib:/opt/conda/lib/python3.11/site-packages/nvidia/cublas/lib:/opt/conda/lib/python3.11/site-packages/nvidia/cuda_runtime/lib`
+  - CPU 전용 INUOS 쪽에서도 같은 라이브러리(cuBLAS, cudart)가 필요할 수 있음
+- DIAG2 참고 관찰 (해석은 INUOS 몫)
+  - 'pt' 목록에서 처음 빌드된 계획의 ws == GPU probe 9.28 1순위 ws: 319/4206
+  - GPU 1순위 ws와 같은 ws가 나오는 위치: 0번 319, 1번 62, 2번 2, 3번 926, 4번 26, 5번 이후 878, 없음 1993
+  - GPU 1순위 ws==0인데 deviceless 0번 계획 ws>0: 1894
+  - 형태당 'pt' 후보 16~40개
